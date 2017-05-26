@@ -121,7 +121,7 @@ def Advance(stream):
     return stream + stream
 
 def AdvancebyPos(stream, pos):
-    return stream << pos
+    return stream >> pos
 
 
 #
