@@ -296,3 +296,5 @@ def low_nybble_stream(bytes):
         str += hex(ord(b))[-1]
     return str
 
+def reset_lowest_bit(bits):
+    return bits & (bits -1)
