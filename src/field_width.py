@@ -4,7 +4,7 @@ For example, for the marker bit stream 11101110111, calculate_field_widths can b
 to produce [3,3,3], which is a list containg the field widths of the three fields encoded in
 the stream (fields are sequences of 1 bits).
 """
-import pablo
+from src import pablo
 
 def calculate_field_widths(pext_marker_stream_wrapper, idx_marker_stream_wrapper, pack_size):
     """
