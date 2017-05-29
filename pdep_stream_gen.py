@@ -11,20 +11,25 @@ of bytes in the input CSV file that correspond to the CSV fields that are to be
 extracted. The PDEP MS identifies the location in the output JSON file (relative
 to JSON boilerplate bytes) that the CSV fields need to be deposited to complete the
 transduction.
+
+All streams are represented as (unbounded) integers. Int_Wrapper is provided as a
+means to pass these integers "by reference". Doing so allows us to make changes
+to our "stream" variables inside methods and have these changes persist once the
+methods return.
 """
 import pablo
 import field_width
 
 # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-EXTRACTED_BITS_STREAM = int('111111111', 2)
-PEXT_MARKER_STREAM = int('11101110111', 2)
-IDX_MARKER_STREAM = 1 #TODO add multi-pack testcases
+EXTRACTED_BITS_STREAM = pablo.IntWrapper(int('111111111', 2))
+PEXT_MARKER_STREAM = pablo.IntWrapper(int('00010001000', 2))
+IDX_MARKER_STREAM = pablo.IntWrapper(1)  #TODO add multi-pack testcases
 PACK_SIZE = 64
 
 def main():
     """Entry point for the program."""
-    PDEP_MARKER_STREAM = 0
-    field_widths = field_width.calculate_field_widths(PEXT_MARKER_STREAM, IDX_MARKER_STREAM)
+    PDEP_MARKER_STREAM = pablo.IntWrapper(0)
+    field_widths = field_width.calculate_field_widths(PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE)
     """fieldType = 0
     for field_width in field_widths:
         extracted_field = extract_field(EXTRACTED_BITS_STREAM, field_width)
@@ -32,7 +37,6 @@ def main():
         insert_field(transduced_field, PDEP_MARKER_STREAM)
     print(bin(PDEP_MARKER_STREAM))
     """
-
 def extract_field(extracted_bits_stream, field_width):
     """Extract field_width number of bits from extracted_bits_stream."""
     #print(pablo.bitstream2string(EXTRACTED_BITS_STREAM, 10))

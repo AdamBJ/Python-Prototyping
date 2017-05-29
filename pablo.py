@@ -299,7 +299,7 @@ def low_nybble_stream(bytes):
 def reset_lowest_bit(bits):
     return bits & (bits -1)
 
-class Int_Wrapper:
+class IntWrapper:
     """Workaround to allow pass-by-value for ints."""
     def __init__(self, value):
         self.value = value
