@@ -12,8 +12,8 @@ extracted. The PDEP MS identifies the location in the output JSON file (relative
 to JSON boilerplate bytes) that the CSV fields need to be deposited to complete the
 transduction.
 
-All streams are represented as (unbounded) integers. Int_Wrapper is provided as a
-means to pass these integers "by reference". Doing so allows us to make changes
+All streams are represented as (unbounded) integers. IntWrapper is provided as a
+means of passing these integers "by reference". Doing so allows us to make changes
 to our "stream" variables inside methods and have these changes persist once the
 methods return.
 """
@@ -56,7 +56,6 @@ def extract_field(extracted_bits_stream, field_width):
 def transduce_field(extracted_field, fieldType):
     """ 
     Pad extracted CSV value with JSON boilerplate.
-    
     
     Number of preceeding and following JSON bytes is determined by 
     relative position of the CSV value within final JSON object.
