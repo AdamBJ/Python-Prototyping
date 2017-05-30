@@ -232,7 +232,7 @@ def bitstream2string(stream, lgth):
     str = ""
     for i in range(lgth):
         if stream & 1 == 1: str += '1'
-        else: str += '_'
+        else: str += '.'
         stream >>= 1
     return str
 
@@ -240,7 +240,7 @@ def bitstream2stringLE(stream, lgth):
     str = ""
     for i in range(lgth):
         if stream & 1 == 1: str = '1' + str
-        else: str = '_' + str
+        else: str = '.' + str
         stream >>= 1
     return str
 
