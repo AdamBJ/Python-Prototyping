@@ -1,8 +1,8 @@
 """
 Contains functions used to calculate the field widths of fields encoded in a marker bit stream.
-For example, for the marker bit stream 11101110111, calculate_field_widths can be called
+For example, for the marker bit stream 00010001000, calculate_field_widths can be called
 to produce [3,3,3], which is a list containg the field widths of the three fields encoded in
-the stream (fields are sequences of 1 bits).
+the stream (fields are sequences of 0 bits).
 """
 from src import pablo
 
@@ -10,13 +10,9 @@ def calculate_field_widths(pext_marker_stream_wrapper, idx_marker_stream_wrapper
     """
     Calculate the field widths of all fields stored in pext_marker_stream_wrapper.value.
 
-    We assume we're given an idx marker stream that tells us which
-    packs in the pext stream contain at least a single 1 bit. A pack is a (usually)
-    64-bit segment of the pext marker stream.
-
-    idx_marker_stream_wrapper.value contains numberBitsInPEXTStream / packSize bits. Bits in this
-    stream that are set correspond to packs that contain at least a single set bit,
-    e.g. if bit 3 of idx_marker_stream_wrapper.value is set, then the third pack in pext_marker_
+    idx_marker_stream_wrapper.value contains numberBitsInPEXTStream/packSize bits. Set bits in this
+    stream correspond to packs in pext_marker_stream that contain at least a single set bit.
+    E.g. if bit 3 of idx_marker_stream_wrapper.value is set, then the third pack in pext_marker_
     stream.value contains at least a single set bit (i.e. it contains field width information
     we need to extract).
 
@@ -44,8 +40,8 @@ def calculate_field_widths(pext_marker_stream_wrapper, idx_marker_stream_wrapper
 
 def find_nonzero_pack(idx_marker_stream_wrapper):
     """
-    Find the first 1-bit in idx_marker stream and return its location, then
-    reset the lowest bit of the idx_marker_stream_wrapper.
+    Find the first set bit in idx_marker stream and return its location, then
+    reset the lowest bit of idx_marker_stream_wrapper.value.
     """
     non_zero_pack_idx = pablo.count_leading_zeroes(idx_marker_stream_wrapper.value)
     idx_marker_stream_wrapper.value = pablo.reset_lowest_bit(idx_marker_stream_wrapper.value)
@@ -54,15 +50,15 @@ def find_nonzero_pack(idx_marker_stream_wrapper):
 def process_pack(pext_marker_stream_wrapper, field_widths, field_start, non_zero_pack_idx,
                  pack_size):
     """
-    Extract field widths from the pack in pext_marker_stream_wrapper indexed by non_zero_pack_idx.
+    Extract field widths from pack in pext_marker_stream_wrapper.value indexed by non_zero_pack_idx.
 
-    This method scans through the pack in pext_marker_stream_wrapper
+    This method scans through the pack in pext_marker_stream_wrapper.value
     indexed by non_zero_pack to calculate the widths of any fields the pack may contain. We
     perform the calculation by scanning the pack from right to left and counting the number of
     bits that are associated with a field.
 
     Fields are sequences of 0s between 1s. To calculate
-    a field width, we subtract the absolute position of the field end marker (i.e. the 1 denoting
+    a field width we subtract the absolute position of the field end marker (i.e. the 1 denoting
     the end of the field) from the absolute position of the field start marker. We then subtract 1
     from the resulting value to get the field width (i.e. the number of zeroes between the start
     and end marker of the field).
@@ -78,5 +74,3 @@ def process_pack(pext_marker_stream_wrapper, field_widths, field_start, non_zero
         field_start = field_end
         pack_wrapper.value = pablo.reset_lowest_bit(pack_wrapper.value)
     return field_start
-
-
