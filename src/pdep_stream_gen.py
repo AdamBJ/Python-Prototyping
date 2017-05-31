@@ -66,25 +66,23 @@ def extract_field(extracted_bits_stream_wrapper, field_width):
     extracted_bits_stream_wrapper.value = extracted_bits_stream_wrapper.value >> field_width
     return extracted_field
 
-#TODO handle non ASCII encodings
+#TODO check handles non-ASCII encodings (everything but UTF-16 should work)
 def transduce_field(field_wrapper, field_type, target):
     """
-    Pad extracted field with appropriate boilerplate.
+    Pad extracted field with appropriate boilerplate, return number of boilerplate
+    bytes added.
     """
     preceeding_boilerplate_bytes = 0
     following_boilerplate_bytes = 0
     if target == TransductionTarget.JSON:
+        #TODO "Please enter column names / parse column names from file"
         # "colname": 
         preceeding_boilerplate_bytes = 4 + len(CSV_COLUMN_NAMES[field_type])
-        #,\n TODO quotes around value?
+        #,\n  or \n} TODO quotes around value?
         following_boilerplate_bytes = 2
-        #TODO "Please enter column names / parse column names from file"
         if field_type == 0:
             #{\n
             preceeding_boilerplate_bytes += 2
-        elif field_type == len(CSV_COLUMN_NAMES) - 1:
-            #\n}
-            following_boilerplate_bytes += 2
     elif target == TransductionTarget.CSV:
         #TODO
         pass
