@@ -35,7 +35,7 @@ from src.field_width import calculate_field_widths
 def main(extracted_bits_stream, pext_marker_stream, idx_marker_stream, pack_size,
          target_format, csv_column_names):
     """Entry point for the program."""
-    print(bin(idx_marker_stream.value))
+    print(pablo.bitstream2stringLE(idx_marker_stream.value, 11))
     pdep_marker_stream = pablo.IntWrapper(0)
     field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
     field_type = 0

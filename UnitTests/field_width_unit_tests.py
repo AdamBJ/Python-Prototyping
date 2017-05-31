@@ -19,7 +19,7 @@ class TestFieldWidthMethods(unittest.TestCase):
     """
     Test the functions in field_width.py with PyUnit.
     """
-    
+
     def test_bad_input(self):
         """Test with negative stream values"""
         pext_marker_stream = IntWrapper(1)
