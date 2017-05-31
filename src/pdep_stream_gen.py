@@ -32,29 +32,27 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.field_width import calculate_field_widths
 
-# Assume we're given the following streams (we need to use Parabix to create them dynamically)
-EXTRACTED_BITS_STREAM = pablo.IntWrapper(int('111111', 2))
-PEXT_MARKER_STREAM = pablo.IntWrapper(int('00010001000', 2))
-IDX_MARKER_STREAM = pablo.IntWrapper(1)
-
-TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
-PACK_SIZE = 64 #user can optionally specify
-CSV_COLUMN_NAMES = ["col1", "col2"] # assume we're given as input or can parse
-
-def main():
+def main(extracted_bits_stream, pext_marker_stream, idx_marker_stream, pack_size,
+         target_format, csv_column_names):
     """Entry point for the program."""
+    print(bin(idx_marker_stream.value))
     pdep_marker_stream = pablo.IntWrapper(0)
-    field_widths = calculate_field_widths(PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE)
+    field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
     field_type = 0
+    total_boilerplate_bytes = 0 #TODO debug, remove
+    total_field_width_bytes = 0
     for field_width in field_widths:
-        field_wrapper = pablo.IntWrapper(extract_field(EXTRACTED_BITS_STREAM, field_width))
-        num_boilerplate_bytes = transduce_field(field_wrapper, field_type, TARGET_FORMAT)
+        field_wrapper = pablo.IntWrapper(extract_field(extracted_bits_stream, field_width))
+        num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format, csv_column_names)
+        total_boilerplate_bytes += num_boilerplate_bytes #TODO debug
+        total_field_width_bytes += field_width #TODO debug
         insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes + field_width)
         field_type += 1
-        if field_type == len(CSV_COLUMN_NAMES):
+        if field_type == len(csv_column_names):
             field_type = 0
-    print(bin(pdep_marker_stream.value))
-    print(pablo.bitstream2stringLE(pdep_marker_stream.value, 30))
+    #print(bin(pdep_marker_stream.value))
+    print(pablo.bitstream2stringLE(pdep_marker_stream.value, total_boilerplate_bytes + total_field_width_bytes))
+    return pdep_marker_stream.value # TODO debug? Needed for assertEqual in PyUnit
 
 def extract_field(extracted_bits_stream_wrapper, field_width):
     """
@@ -66,25 +64,25 @@ def extract_field(extracted_bits_stream_wrapper, field_width):
     extracted_bits_stream_wrapper.value = extracted_bits_stream_wrapper.value >> field_width
     return extracted_field
 
-#TODO handle non ASCII encodings
-def transduce_field(field_wrapper, field_type, target):
+# TODO check handles non-ASCII encodings (everything but UTF-16 should work)
+# TODO remove csv_column_names as argument. Only needed if target is CSV. Parse/prompt
+# user if required
+def transduce_field(field_wrapper, field_type, target, csv_column_names):
     """
-    Pad extracted field with appropriate boilerplate.
+    Pad extracted field with appropriate boilerplate, return number of boilerplate
+    bytes added.
     """
     preceeding_boilerplate_bytes = 0
     following_boilerplate_bytes = 0
     if target == TransductionTarget.JSON:
-        # "colname": 
-        preceeding_boilerplate_bytes = 4 + len(CSV_COLUMN_NAMES[field_type])
-        #,\n TODO quotes around value?
-        following_boilerplate_bytes = 2
         #TODO "Please enter column names / parse column names from file"
+        # "colname": 
+        preceeding_boilerplate_bytes = 4 + len(csv_column_names[field_type])
+        #,\n  or \n} TODO quotes around value?
+        following_boilerplate_bytes = 2
         if field_type == 0:
             #{\n
             preceeding_boilerplate_bytes += 2
-        elif field_type == len(CSV_COLUMN_NAMES) - 1:
-            #\n}
-            following_boilerplate_bytes += 2
     elif target == TransductionTarget.CSV:
         #TODO
         pass
@@ -98,5 +96,14 @@ def insert_field(field_wrapper, pdep_marker_stream, transduced_field_width):
                                | field_wrapper.value
 
 if __name__ == '__main__':
-    main()
+    # Assume we're given the following streams (we need to use Parabix to create them dynamically)
+    EXTRACTED_BITS_STREAM = pablo.IntWrapper(int('111111', 2))
+    PEXT_MARKER_STREAM = pablo.IntWrapper(int('00010001000', 2))
+    IDX_MARKER_STREAM = pablo.IntWrapper(1)
+    PACK_SIZE = 64 #user can optionally specify
+    TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
+    CSV_COLUMN_NAMES = ["col1", "col2"] # assume we're given as input or can parse
+    
+    main(EXTRACTED_BITS_STREAM, PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT, 
+         CSV_COLUMN_NAMES)
 
