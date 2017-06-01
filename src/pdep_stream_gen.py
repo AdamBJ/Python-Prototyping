@@ -32,36 +32,41 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.field_width import calculate_field_widths
 
-def main(extracted_bits_stream, pext_marker_stream, idx_marker_stream, pack_size,
-         target_format, csv_column_names):
-    """Entry point for the program."""
-    print(pablo.bitstream2stringLE(~pext_marker_stream.value, 11))
+def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
+                         target_format, csv_column_names):
+    """ Args:
+    extracted_bits_stream:
+    pext_marker_stream: Stream marking the locations of bits we want to extract
+    from the CSV file. Used here to calculate field widths, not for PEXT operations
+    idx_marker_stream:
+    pack_size:
+    target_format:
+    csv_column_names:
+
+
+    Returns:
+    The return value. True for success, False otherwise.
+    """
+    print(bin(pext_marker_stream.value, 11))
     pdep_marker_stream = pablo.BitStream(0)
     field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
     field_type = 0
-    total_boilerplate_bytes = 0 #TODO debug, remove
-    total_field_width_bytes = 0
     for field_width in field_widths:
-        field_wrapper = pablo.BitStream(extract_field(extracted_bits_stream, field_width))
-        num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format, csv_column_names)
-        total_boilerplate_bytes += num_boilerplate_bytes #TODO debug
-        total_field_width_bytes += field_width #TODO debug
+        field_wrapper = create_raw_field(field_width)
+        num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format,
+                                                csv_column_names)
         insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes + field_width)
         field_type += 1
         if field_type == len(csv_column_names):
             field_type = 0
-    print(pablo.bitstream2stringLE(pdep_marker_stream.value, total_boilerplate_bytes + total_field_width_bytes))
-    return pdep_marker_stream.value # TODO debug? Needed for assertEqual in PyUnit
+    print(bin(pdep_marker_stream.value))
+    return pdep_marker_stream.value
 
-def extract_field(extracted_bits_stream_wrapper, field_width):
+def create_raw_field(field_width):
+    """ E.g. field_width = 3, return 111
+    
     """
-    Extract field_width number of bits from extracted_bits_stream. Start extraction
-    from least signifcant position (i.e. rightmost) position in extracted_bits_stream.
-    """
-    field_extraction_mask = (1 << field_width) - 1
-    extracted_field = field_extraction_mask & extracted_bits_stream_wrapper.value
-    extracted_bits_stream_wrapper.value = extracted_bits_stream_wrapper.value >> field_width
-    return extracted_field
+    return pablo.BitStream((1 << field_width) - 1)
 
 # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
 # TODO remove csv_column_names as argument. Only needed if target is CSV. Parse/prompt
@@ -96,13 +101,12 @@ def insert_field(field_wrapper, pdep_marker_stream, transduced_field_width):
 
 if __name__ == '__main__':
     # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-    EXTRACTED_BITS_STREAM = pablo.BitStream(int('111111111', 2))
     PEXT_MARKER_STREAM = pablo.BitStream(int('100010001000', 2))
     IDX_MARKER_STREAM = pablo.BitStream(1)
     PACK_SIZE = 64 #user can optionally specify
     TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
     CSV_COLUMN_NAMES = ["col1", "col2", "col3"] # assume we're given as input or can parse
-    
-    main(EXTRACTED_BITS_STREAM, PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT, 
-         CSV_COLUMN_NAMES)
+
+    generate_pdep_stream(PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT,
+                         CSV_COLUMN_NAMES)
 

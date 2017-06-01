@@ -27,16 +27,20 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         111.111.111 ->
         ..........111..........111..........111..
         """
-        extracted_bits_stream = pablo.BitStream(int('111111111', 2))
-        pext_marker_stream = pablo.BitStream(int('100010001000', 2))
+        pext_marker_stream = pablo.BitStream(int('11101110111', 2))
         idx_marker_stream = pablo.BitStream(1)
         pack_size = 64
         target_format = TransductionTarget.JSON
         csv_column_names = ["col1", "col2", "col3"]
 
-        self.assertEqual(pdep_stream_gen.main(extracted_bits_stream, pext_marker_stream,
-                                              idx_marker_stream, pack_size, target_format,
-                                              csv_column_names), 1879277596)
+        pdep_marker_stream = pablo.BitStream(pdep_stream_gen.main(pext_marker_stream,
+                                                                  idx_marker_stream,
+                                                                  pack_size, target_format,
+                                                                  csv_column_names))
+
+        self.assertEqual(pablo.get_popcount(pext_marker_stream.value),
+                         pablo.get_popcount(pdep_marker_stream.value))
+        self.assertEqual(pdep_marker_stream.value, 1879277596)
 
 if __name__ == '__main__':
     unittest.main()

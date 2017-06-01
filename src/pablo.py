@@ -299,6 +299,13 @@ def low_nybble_stream(bytes):
 def reset_lowest_bit(bits):
     return bits & (bits -1)
 
+def get_popcount(bits):
+    count = 0
+    while bits:
+        bits = reset_lowest_bit(bits)
+        count += 1
+    return count
+
 class BitStream:
     """Workaround to allow pass-by-value for ints."""
     def __init__(self, value):
