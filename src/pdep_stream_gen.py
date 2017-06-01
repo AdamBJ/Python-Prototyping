@@ -14,7 +14,7 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.field_width import calculate_field_widths
 
-def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
+def generate_pdep_stream(field_width_stream, idx_marker_stream, pack_size,
                          target_format, csv_column_names):
     """Generate a bit mask stream for use with the PDEP operation.
 
@@ -28,11 +28,10 @@ def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
     methods return.
 
     Args:
-        pext_marker_stream: Marks the locations of bits we want the PDEP operation
-            to extract from the CSV file. Used in generate_pdep_stream to calculate field widths,
-            not for PEXT operations
-        idx_marker_stream: Tells us which packs (clusters of pack_size bits) in pext_marker_stream
-            contain at least a single set bit.
+        field_width_stream: Sequences of zeroes in this stream correspond to source file fields.
+            Scan through the sequences and count the number of zeroes to determine field widths.
+        idx_marker_stream: Tells us which packs (clusters of pack_size bits) in field_width_stream
+            contain at least a single field.
         pack_size: Integer describing the width of a pack.
         target_format: E.g. JSON, CSV, ...
         csv_column_names: Names of the columns in the input CSV file (if target_format == JSON)
@@ -42,15 +41,15 @@ def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
         The pdep bit stream.
 
     Examples:
-        >>> generate_pdep_stream(11101110111, 1, 64, TransductionTarget.JSON,
+        >>> generate_pdep_stream(100010001000, 1, 64, TransductionTarget.JSON,
                                  ["col1", "col2", "col3"])
         1879277596
 
         1879277596 when viewed as a bit stream is ..........111..........111..........111..
     """
-    print(bin(pext_marker_stream.value))
+    print(bin(field_width_stream.value))
     pdep_marker_stream = pablo.BitStream(0)
-    field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
+    field_widths = calculate_field_widths(field_width_stream, idx_marker_stream, pack_size)
     field_type = 0
     for field_width in field_widths:
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
@@ -105,12 +104,12 @@ def insert_field(field_wrapper, pdep_marker_stream, transduced_field_width):
 
 if __name__ == '__main__':
     # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-    PEXT_MARKER_STREAM = pablo.BitStream(int('100010001000', 2))
+    field_width_stream = pablo.BitStream(int('100010001000', 2))
     IDX_MARKER_STREAM = pablo.BitStream(1)
     PACK_SIZE = 64 #user can optionally specify
     TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
     CSV_COLUMN_NAMES = ["col1", "col2", "col3"] # assume we're given as input or can parse
 
-    generate_pdep_stream(PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT,
+    generate_pdep_stream(field_width_stream, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT,
                          CSV_COLUMN_NAMES)
 
