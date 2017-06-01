@@ -1,22 +1,4 @@
-"""
-Proof of concept for PEXT/PDEP approach to the general transducer problem.
-
-Takes as input a PEXT marker stream and an extracted bit stream (obtained via PEXT
-operation on the input file using the PEXT marker stream) and produces a PDEP
-marker stream. The PDEP marker stream shows where in an output file the extracted
-bits should be inserted in order to complete the desired transduction operation.
-
-For example, consider CSV to JSON transduction. The PEXT MS identifies the location
-of bytes in the input CSV file that correspond to the CSV fields that are to be
-extracted. The PDEP MS identifies the locations in the output JSON file (relative
-to JSON boilerplate bytes) that the CSV fields need to be deposited to complete the
-transduction.
-
-All streams are represented as (unbounded) integers. BitStream is provided as a
-means of passing these integers "by reference". Doing so allows us to make changes
-to our "stream" variables inside methods and have these changes persist once the
-methods return.
-"""
+""" Contains functions used for pdep marker stream geneartion."""
 import sys
 import os
 
@@ -34,25 +16,44 @@ from src.field_width import calculate_field_widths
 
 def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
                          target_format, csv_column_names):
-    """ Args:
-    extracted_bits_stream:
-    pext_marker_stream: Stream marking the locations of bits we want to extract
-    from the CSV file. Used here to calculate field widths, not for PEXT operations
-    idx_marker_stream:
-    pack_size:
-    target_format:
-    csv_column_names:
+    """Generate a bit mask stream for use with the PDEP operation.
+
+    Takes as input a PEXT marker stream and index marker stream and produces a PDEP
+    marker stream. The PDEP marker stream shows where in an output file the extracted
+    bits should be inserted in order to complete the desired transduction operation.
+
+    All streams are represented as (unbounded) integers. BitStream is provided as a
+    means of passing these integers "by reference". Doing so allows us to make changes
+    to our "stream" variables inside methods and have these changes persist once the
+    methods return.
+
+    Args:
+        pext_marker_stream: Marks the locations of bits we want the PDEP operation
+            to extract from the CSV file. Used in generate_pdep_stream to calculate field widths,
+            not for PEXT operations
+        idx_marker_stream: Tells us which packs (clusters of pack_size bits) in pext_marker_stream
+            contain at least a single set bit.
+        pack_size: Integer describing the width of a pack.
+        target_format: E.g. JSON, CSV, ...
+        csv_column_names: Names of the columns in the input CSV file (if target_format == JSON)
 
 
-    Returns:
-    The return value. True for success, False otherwise.
+    Returns (BitStream):
+        The pdep bit stream.
+
+    Examples:
+        >>> generate_pdep_stream(11101110111, 1, 64, TransductionTarget.JSON,
+                                 ["col1", "col2", "col3"])
+        1879277596
+
+        1879277596 when viewed as a bit stream is ..........111..........111..........111..
     """
-    print(bin(pext_marker_stream.value, 11))
+    print(bin(pext_marker_stream.value))
     pdep_marker_stream = pablo.BitStream(0)
     field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
     field_type = 0
     for field_width in field_widths:
-        field_wrapper = create_raw_field(field_width)
+        field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
         num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format,
                                                 csv_column_names)
         insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes + field_width)
@@ -62,19 +63,22 @@ def generate_pdep_stream(pext_marker_stream, idx_marker_stream, pack_size,
     print(bin(pdep_marker_stream.value))
     return pdep_marker_stream.value
 
-def create_raw_field(field_width):
-    """ E.g. field_width = 3, return 111
-    
-    """
-    return pablo.BitStream((1 << field_width) - 1)
-
 # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
 # TODO remove csv_column_names as argument. Only needed if target is CSV. Parse/prompt
 # user if required
 def transduce_field(field_wrapper, field_type, target, csv_column_names):
-    """
-    Pad extracted field with appropriate boilerplate, return number of boilerplate
-    bytes added.
+    """ Pad extracted field with appropriate boilerplate.
+
+    Args:
+        field_wrapper: The field to trasduce.
+        field_type: A scalar describing the type of the field
+        csv_column_names: The names of the columns in the input CSV file
+     Returns:
+         Number of boilerplate padding bytes added.
+     Example:
+        >>>transduce_field(111, 0, JSON, ["col1","col2"])
+        10
+        Note: original field transformed from 111 to (00000000)11100
     """
     preceeding_boilerplate_bytes = 0
     following_boilerplate_bytes = 0

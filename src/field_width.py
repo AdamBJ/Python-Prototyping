@@ -1,5 +1,4 @@
-"""
-Contains functions used to calculate the field widths of fields encoded in a marker bit stream.
+""" Contains functions used to calculate the field widths of fields encoded in a marker bit stream.
 For example, for the marker bit stream 00010001000, calculate_field_widths can be called
 to produce [3,3,3], which is a list containg the field widths of the three fields encoded in
 the stream (fields are sequences of 0 bits).
@@ -7,8 +6,7 @@ the stream (fields are sequences of 0 bits).
 from src import pablo
 
 def calculate_field_widths(pext_marker_stream_wrapper, idx_marker_stream_wrapper, pack_size):
-    """
-    Calculate the field widths of all fields stored in pext_marker_stream_wrapper.value.
+    """Calculate the field widths of all fields stored in pext_marker_stream_wrapper.value.
 
     idx_marker_stream_wrapper.value contains numberBitsInPEXTStream/packSize bits. Set bits in this
     stream correspond to packs in pext_marker_stream that contain at least a single set bit.
@@ -39,8 +37,7 @@ def calculate_field_widths(pext_marker_stream_wrapper, idx_marker_stream_wrapper
     return field_widths
 
 def find_nonzero_pack(idx_marker_stream_wrapper):
-    """
-    Find the first set bit in idx_marker stream and return its location, then
+    """Find the first set bit in idx_marker stream and return its location, then
     reset the lowest bit of idx_marker_stream_wrapper.value.
     """
     non_zero_pack_idx = pablo.count_leading_zeroes(idx_marker_stream_wrapper.value)
@@ -49,8 +46,7 @@ def find_nonzero_pack(idx_marker_stream_wrapper):
 
 def process_pack(pext_marker_stream_wrapper, field_widths, field_start, non_zero_pack_idx,
                  pack_size):
-    """
-    Extract field widths from pack in pext_marker_stream_wrapper.value indexed by non_zero_pack_idx.
+    """Extract field widths from pack in pext_marker_stream_wrapper.value indexed by non_zero_pack_idx.
 
     This method scans through the pack in pext_marker_stream_wrapper.value
     indexed by non_zero_pack to calculate the widths of any fields the pack may contain. We
