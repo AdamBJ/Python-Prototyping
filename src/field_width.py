@@ -67,7 +67,7 @@ def process_pack(pext_marker_stream_wrapper, field_widths, field_start, non_zero
     aligned_pack_mask = pack_mask << (non_zero_pack_idx * pack_size)
     aligned_pack = aligned_pack_mask & pext_marker_stream_wrapper.value
     pack = aligned_pack >> (non_zero_pack_idx * pack_size)
-    pack_wrapper = pablo.IntWrapper(pack)
+    pack_wrapper = pablo.BitStream(pack)
     while pack_wrapper.value:
         field_end = pablo.count_leading_zeroes(pack_wrapper.value) + (non_zero_pack_idx * pack_size)
         field_widths.append(field_end - field_start - 1)

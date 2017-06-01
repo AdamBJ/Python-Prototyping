@@ -22,16 +22,21 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
     """
 
     def test_simple(self):
-        """Simple CSV transduction test."""
-        EXTRACTED_BITS_STREAM = pablo.IntWrapper(int('111111', 2))
-        PEXT_MARKER_STREAM = pablo.IntWrapper(int('00010001000', 2))
-        IDX_MARKER_STREAM = pablo.IntWrapper(1)
-        PACK_SIZE = 64 
-        TARGET_FORMAT = TransductionTarget.JSON
-        CSV_COLUMN_NAMES = ["col1", "col2"]
+        """Simple CSV transduction test.
 
-        self.assertEqual(pdep_stream_gen.main(EXTRACTED_BITS_STREAM, PEXT_MARKER_STREAM, 
-                         IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT, CSV_COLUMN_NAMES), 229404)
+        111.111.111 ->
+        ..........111..........111..........111..
+        """
+        extracted_bits_stream = pablo.BitStream(int('111111111', 2))
+        pext_marker_stream = pablo.BitStream(int('100010001000', 2))
+        idx_marker_stream = pablo.BitStream(1)
+        pack_size = 64
+        target_format = TransductionTarget.JSON
+        csv_column_names = ["col1", "col2", "col3"]
+
+        self.assertEqual(pdep_stream_gen.main(extracted_bits_stream, pext_marker_stream,
+                                              idx_marker_stream, pack_size, target_format,
+                                              csv_column_names), 1879277596)
 
 if __name__ == '__main__':
     unittest.main()

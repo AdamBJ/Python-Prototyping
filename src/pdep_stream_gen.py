@@ -12,7 +12,7 @@ extracted. The PDEP MS identifies the locations in the output JSON file (relativ
 to JSON boilerplate bytes) that the CSV fields need to be deposited to complete the
 transduction.
 
-All streams are represented as (unbounded) integers. IntWrapper is provided as a
+All streams are represented as (unbounded) integers. BitStream is provided as a
 means of passing these integers "by reference". Doing so allows us to make changes
 to our "stream" variables inside methods and have these changes persist once the
 methods return.
@@ -35,14 +35,14 @@ from src.field_width import calculate_field_widths
 def main(extracted_bits_stream, pext_marker_stream, idx_marker_stream, pack_size,
          target_format, csv_column_names):
     """Entry point for the program."""
-    print(pablo.bitstream2stringLE(idx_marker_stream.value, 11))
-    pdep_marker_stream = pablo.IntWrapper(0)
+    print(pablo.bitstream2stringLE(~pext_marker_stream.value, 11))
+    pdep_marker_stream = pablo.BitStream(0)
     field_widths = calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size)
     field_type = 0
     total_boilerplate_bytes = 0 #TODO debug, remove
     total_field_width_bytes = 0
     for field_width in field_widths:
-        field_wrapper = pablo.IntWrapper(extract_field(extracted_bits_stream, field_width))
+        field_wrapper = pablo.BitStream(extract_field(extracted_bits_stream, field_width))
         num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format, csv_column_names)
         total_boilerplate_bytes += num_boilerplate_bytes #TODO debug
         total_field_width_bytes += field_width #TODO debug
@@ -50,7 +50,6 @@ def main(extracted_bits_stream, pext_marker_stream, idx_marker_stream, pack_size
         field_type += 1
         if field_type == len(csv_column_names):
             field_type = 0
-    #print(bin(pdep_marker_stream.value))
     print(pablo.bitstream2stringLE(pdep_marker_stream.value, total_boilerplate_bytes + total_field_width_bytes))
     return pdep_marker_stream.value # TODO debug? Needed for assertEqual in PyUnit
 
@@ -97,12 +96,12 @@ def insert_field(field_wrapper, pdep_marker_stream, transduced_field_width):
 
 if __name__ == '__main__':
     # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-    EXTRACTED_BITS_STREAM = pablo.IntWrapper(int('111111', 2))
-    PEXT_MARKER_STREAM = pablo.IntWrapper(int('00010001000', 2))
-    IDX_MARKER_STREAM = pablo.IntWrapper(1)
+    EXTRACTED_BITS_STREAM = pablo.BitStream(int('111111111', 2))
+    PEXT_MARKER_STREAM = pablo.BitStream(int('100010001000', 2))
+    IDX_MARKER_STREAM = pablo.BitStream(1)
     PACK_SIZE = 64 #user can optionally specify
     TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
-    CSV_COLUMN_NAMES = ["col1", "col2"] # assume we're given as input or can parse
+    CSV_COLUMN_NAMES = ["col1", "col2", "col3"] # assume we're given as input or can parse
     
     main(EXTRACTED_BITS_STREAM, PEXT_MARKER_STREAM, IDX_MARKER_STREAM, PACK_SIZE, TARGET_FORMAT, 
          CSV_COLUMN_NAMES)
