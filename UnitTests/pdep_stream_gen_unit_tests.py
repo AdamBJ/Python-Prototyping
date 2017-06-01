@@ -37,6 +37,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
 
         100010001000 ->
         ..........111..........111..........111..
+                  111..........111............111..
         """
         field_width_stream = pablo.BitStream(int('100010001000', 2))
         idx_marker_stream = pablo.BitStream(1)
@@ -49,6 +50,42 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
                                                                   pack_size, target_format,
                                                                   csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 1879277596)
+
+    def test_simple2(self):
+        """Simple CSV transduction test with empty fields, more complex idx, different pack_size.
+
+        100011000001000 ->
+        ..........111....................111..........11111..........111..
+        """
+        field_width_stream = pablo.BitStream(int('1000110001000001000', 2))
+        idx_marker_stream = pablo.BitStream(int('11101', 2))
+        pack_size = 4
+        target_format = TransductionTarget.JSON
+        csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
+
+        pdep_marker_stream = pablo.BitStream(generate_pdep_stream(field_width_stream,
+                                                                  idx_marker_stream,
+                                                                  pack_size, target_format,
+                                                                  csv_column_names))
+        self.assertEqual(pdep_marker_stream.value, 63050402300395548)
+     
+    #  def test_unicode(self):
+    #     """Simple CSV transduction test.
+
+    #     100010001000 ->
+    #     ..........111..........111..........111..
+    #     """
+    #     field_width_stream = pablo.BitStream(int('100010001000', 2))
+    #     idx_marker_stream = pablo.BitStream(1)
+    #     pack_size = 64
+    #     target_format = TransductionTarget.JSON
+    #     csv_column_names = ["col1", "col2", "col3"]
+
+    #     pdep_marker_stream = pablo.BitStream(generate_pdep_stream(field_width_stream,
+    #                                                               idx_marker_stream,
+    #                                                               pack_size, target_format,
+    #                                                               csv_column_names))
+    #     self.assertEqual(pdep_marker_stream.value, 1879277596)
 
 if __name__ == '__main__':
     unittest.main()

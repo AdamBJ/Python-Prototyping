@@ -2,6 +2,10 @@
 For example, for the marker bit stream 00010001000, calculate_field_widths can be called
 to produce [3,3,3], which is a list containg the field widths of the three fields encoded in
 the stream (fields are sequences of 0 bits).
+
+Note that the first field width we scan in is width of the *last* field in the input document.
+We process streams from least sig bit to most sig (right to left), but we read documents from
+left to right.
 """
 from src import pablo
 
@@ -66,7 +70,7 @@ def process_pack(field_width_stream_wrapper, field_widths, field_start, non_zero
     pack_wrapper = pablo.BitStream(pack)
     while pack_wrapper.value:
         field_end = pablo.count_leading_zeroes(pack_wrapper.value) + (non_zero_pack_idx * pack_size)
-        field_widths.append(field_end - field_start - 1)
+        field_widths.insert(0, field_end - field_start - 1) #TODO document this better. first field width we process is last CSV field. this should be the end of the list, not the front. dont append
         field_start = field_end
         pack_wrapper.value = pablo.reset_lowest_bit(pack_wrapper.value)
     return field_start

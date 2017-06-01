@@ -27,6 +27,14 @@ def generate_pdep_stream(field_width_stream, idx_marker_stream, pack_size,
     to our "stream" variables inside methods and have these changes persist once the
     methods return.
 
+    Note that we process each stream from least significant bit to most significant bit
+    (i.e. right to left). Scans naturally start from the righthand side of the least sig bit.
+     However, as disscussed in the field_width.py doc string, we
+    read the input document from left to right. Therefore, we transduce fields from left
+    to right, but we process streams (to extract information like field widths) from
+    right to left.
+
+
     Args:
         field_width_stream: Sequences of zeroes in this stream correspond to source file fields.
             Scan through the sequences and count the number of zeroes to determine field widths.
@@ -50,16 +58,18 @@ def generate_pdep_stream(field_width_stream, idx_marker_stream, pack_size,
     print(bin(field_width_stream.value))
     pdep_marker_stream = pablo.BitStream(0)
     field_widths = calculate_field_widths(field_width_stream, idx_marker_stream, pack_size)
+    #if len(field_widths) % len(csv_column_names) != 0...
     field_type = 0
     for field_width in field_widths:
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
-        num_boilerplate_bytes = transduce_field(field_wrapper, field_type, target_format,
-                                                csv_column_names)
-        insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes + field_width)
+        num_boilerplate_bytes_added = transduce_field(field_wrapper, field_type, target_format,
+                                                   csv_column_names)
+        insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes_added + field_width)
         field_type += 1
         if field_type == len(csv_column_names):
             field_type = 0
-    print(bin(pdep_marker_stream.value))
+        print(bin(pdep_marker_stream.value))
+    #print(pablo.bitstream2stringLE(pdep_marker_stream.value, total_boilerplate_bytes + total_field_bytes))
     return pdep_marker_stream.value
 
 # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
@@ -97,9 +107,9 @@ def transduce_field(field_wrapper, field_type, target, csv_column_names):
     field_wrapper.value = field_wrapper.value << following_boilerplate_bytes
     return preceeding_boilerplate_bytes + following_boilerplate_bytes
 
-def insert_field(field_wrapper, pdep_marker_stream, transduced_field_width):
-    """AND padded value into PDEP marker stream."""
-    pdep_marker_stream.value = (pdep_marker_stream.value << transduced_field_width) \
+def insert_field(field_wrapper, pdep_marker_stream, shift_amount):
+    """OR padded value into PDEP marker stream."""
+    pdep_marker_stream.value = (pdep_marker_stream.value << shift_amount) \
                                | field_wrapper.value
 
 if __name__ == '__main__':
