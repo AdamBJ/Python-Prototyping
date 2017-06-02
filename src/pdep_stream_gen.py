@@ -70,7 +70,7 @@ def generate_pdep_stream(field_width_stream_wrapper, idx_marker_stream_wrapper, 
     # Credit to A.Polino for this check
         raise ValueError("Pack size must be a power of two.")
 
-    print(bin(field_width_stream_wrapper.value)) # debug
+    #print(bin(field_width_stream_wrapper.value)) # debug
     pdep_marker_stream = pablo.BitStream(0)
     field_widths = calculate_field_widths(field_width_stream_wrapper, idx_marker_stream_wrapper,
                                           pack_size)
@@ -85,7 +85,7 @@ def generate_pdep_stream(field_width_stream_wrapper, idx_marker_stream_wrapper, 
         if field_type == len(csv_column_names):
             field_type = 0
         #print(bin(pdep_marker_stream.value)) debug
-    print(bin(pdep_marker_stream.value)) #debug
+    #print(bin(pdep_marker_stream.value)) #debug
     return pdep_marker_stream.value
 
 # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
