@@ -12,8 +12,7 @@ insert field: insert transduced field into pdep stream
 import sys
 import os
 
-# workaround to get the import statements below working properly. Required
-# if this module can be run as "main"
+# workaround to get the import statements below working properly.
 # see https://stackoverflow.com/questions/16981921/relative-imports-in-python-3
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),

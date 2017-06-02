@@ -66,7 +66,7 @@ def transpose_streams(s, b):
         elif index == 8:
             b.bit_7 = current
     data  = s
-    return cursor-1  # basis streams and EOF mask
+    return cursor-1  # EOF mask
 
 def match(s,marker):
     pos = count_leading_zeroes(marker)
@@ -311,3 +311,12 @@ class BitStream:
     def __init__(self, value):
         self.value = value
 
+class BasisBits():
+    bit_0 = 0
+    bit_1 = 0
+    bit_2 = 0
+    bit_3 = 0
+    bit_4 = 0
+    bit_5 = 0
+    bit_6 = 0
+    bit_7 = 0
