@@ -20,22 +20,6 @@ class TestFieldWidthMethods(unittest.TestCase):
     Test the functions in field_width.py with PyUnit.
     """
 
-    def test_bad_input(self):
-        """Test with negative stream values"""
-        field_width_stream = BitStream(1)
-        idx_marker_stream = BitStream(-1)
-        pack_size = 64
-        self.assertRaises(ValueError, field_width.calculate_field_widths,
-                          field_width_stream, idx_marker_stream, pack_size)
-
-    def test_bad_input2(self):
-        """Test with pack_size that isn't a power of 2"""
-        field_width_stream = BitStream(1)
-        idx_marker_stream = BitStream(1)
-        pack_size = 63
-        self.assertRaises(ValueError, field_width.calculate_field_widths,
-                          field_width_stream, idx_marker_stream, pack_size)
-
     def test_simple(self):
         """Test with single-pack field_width_stream"""
         field_width_stream = BitStream(int('100010001000', 2))
@@ -50,7 +34,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = BitStream(1)
         pack_size = 64
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [3, 0, 5])
+                         (field_width_stream, idx_marker_stream, pack_size), [5, 0, 3])
 
     def test_multpack(self):
         """Test with multi-pack field_width_stream and non-standard pack_size."""
@@ -58,7 +42,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = BitStream(int('101', 2))
         pack_size = 8
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [3, 0, 12])
+                         (field_width_stream, idx_marker_stream, pack_size), [12, 0, 3])
     def test_multpack2(self):
         """Test with multi-pack field_width_stream and standard pack_size."""
         field_width_stream = BitStream(int('12f051200f31011111', 16))
@@ -66,8 +50,9 @@ class TestFieldWidthMethods(unittest.TestCase):
         pack_size = 64
         self.assertEqual(field_width.calculate_field_widths
                          (field_width_stream, idx_marker_stream, pack_size),
-                         [0, 3, 3, 3, 3, 7, 3, 0, 2, 0, 0, 0, 9,
-                          2, 3, 1, 5, 0, 0, 0, 1, 2])
+                         [2, 1, 0, 0, 0, 5, 1, 3, 2, 9, 0, 0, 0,
+                          2, 0, 3, 7, 3, 3, 3, 3, 0])
+
     def test_multpack3(self):
         """Test with many-pack field_width_stream and non-standard pack_size."""
         field_width_stream = BitStream(int('1010000011111001100111110000000011011010', 2))
@@ -75,7 +60,8 @@ class TestFieldWidthMethods(unittest.TestCase):
         pack_size = 4
         self.assertEqual(field_width.calculate_field_widths
                          (field_width_stream, idx_marker_stream, pack_size),
-                         [1, 1, 0, 1, 0, 8, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 5, 1])
+                         [1, 5, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 8, 0, 1, 0, 1, 1])
+
 
     def test_multpack4(self):
         """Test with multi-pack aligned on pack boundaries."""
@@ -83,7 +69,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = BitStream(int('111', 2))
         pack_size = 8
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [0, 6, 0, 6, 0, 6])
+                         (field_width_stream, idx_marker_stream, pack_size), [6, 0, 6, 0, 6, 0])
 
 if __name__ == '__main__':
     unittest.main()

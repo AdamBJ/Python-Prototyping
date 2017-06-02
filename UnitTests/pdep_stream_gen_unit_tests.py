@@ -18,6 +18,29 @@ from src.pdep_stream_gen import generate_pdep_stream
 
 class TestPDEPStreamGenMethods(unittest.TestCase):
     """Test the functions in pdep_stream_gen_unit_tests.py with PyUnit."""
+
+    def test_bad_input(self):
+        """Test with negative stream values"""
+        field_width_stream = pablo.BitStream(-1)
+        idx_marker_stream = pablo.BitStream(-1)
+        pack_size = 64
+        target_format = TransductionTarget.JSON
+        csv_column_names = ["col1", "col2", "col3"]
+        self.assertRaises(ValueError, generate_pdep_stream,
+                          field_width_stream, idx_marker_stream,
+                          pack_size, target_format, csv_column_names)
+
+    def test_bad_input2(self):
+        """Test with pack_size that isn't a power of 2"""
+        field_width_stream = pablo.BitStream(0)
+        idx_marker_stream = pablo.BitStream(0)
+        pack_size = 63
+        target_format = TransductionTarget.JSON
+        csv_column_names = ["col1", "col2", "col3"]
+        self.assertRaises(ValueError, generate_pdep_stream,
+                          field_width_stream, idx_marker_stream,
+                          pack_size, target_format, csv_column_names)
+
     def test_empty_file(self):
         """Test with empty CSV file."""
         field_width_stream = pablo.BitStream(0)
