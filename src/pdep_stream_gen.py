@@ -24,6 +24,7 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.field_width import calculate_field_widths
 
+#TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
 def generate_pdep_stream(field_width_stream_wrapper, idx_marker_stream_wrapper, pack_size,
                          target_format, csv_column_names):
     """Generate a bit mask stream for use with the PDEP operation.
@@ -109,7 +110,7 @@ def transduce_field(field_wrapper, field_type, target, csv_column_names):
     if target == TransductionTarget.JSON:
         #TODO "Please enter column names / parse column names from file"
         # "colname": 
-        preceeding_boilerplate_bytes = 4 + len(csv_column_names[field_type])
+        preceeding_boilerplate_bytes = 4 + len(csv_column_names[field_type].encode('utf-8'))
         #,\n  or \n} TODO quotes around value?
         following_boilerplate_bytes = 2
         if field_type == 0:
