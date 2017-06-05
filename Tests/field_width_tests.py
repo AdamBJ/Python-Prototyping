@@ -1,5 +1,5 @@
 """
-Contains unit tests for the functions in field_width.py
+Contains tests for the functions in field_width.py
 """
 import unittest
 
@@ -18,6 +18,10 @@ from src.pablo import BitStream
 class TestFieldWidthMethods(unittest.TestCase):
     """
     Test the functions in field_width.py with PyUnit.
+
+    We perform integration testing for the field_width.py module
+    by verifying the behaviour of the calculate_field_widths function,
+    which calls the other functions defined in field_width.py
     """
 
     def test_simple(self):

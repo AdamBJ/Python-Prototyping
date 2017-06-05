@@ -1,5 +1,5 @@
 """
-Contains unit tests for the functions in pdep_stream_gen.py.
+Contains tests for the functions in pdep_stream_gen.py.
 """
 import unittest
 
@@ -17,7 +17,12 @@ from src import pablo
 from src.pdep_stream_gen import generate_pdep_stream
 
 class TestPDEPStreamGenMethods(unittest.TestCase):
-    """Test the functions in pdep_stream_gen_unit_tests.py with PyUnit."""
+    """Test the functions in pdep_stream_gen_unit_tests.py with PyUnit.
+
+    We perform integration testing for the pdep_stream_gen.py module
+    by verifying the behaviour of the generate_pdep_stream function,
+    which calls the other functions defined in pdep_stream_gen.py
+    """
 
     def test_bad_input(self):
         """Test with negative stream values"""

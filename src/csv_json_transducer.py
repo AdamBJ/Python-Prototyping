@@ -1,3 +1,8 @@
+"""
+Contains the "main" method that we call to transduce a field in one format
+to a field in another format. Currently the only transduction operation 
+supported is CSV to JSON.
+"""
 import sys
 import os
 # workaround to get the import statements below working properly.
@@ -84,6 +89,9 @@ def create_field_width_ms(pext_marker_stream, input_file_length):
     leading 1 bits that result (except the first leading 1, we need that to denote the end of
     the last field).
 
+    Note that this function may not be neccesary in the final Parabix version. We can simply
+    add support to Pablo for scanning sequences of 1s.
+
     Example:
         pext_marker_stream (int): 11011101111, return 100100010001
     """
@@ -92,15 +100,28 @@ def create_field_width_ms(pext_marker_stream, input_file_length):
     #field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
     return field_width_stream_wrapper
 
-def main(pack_size, csv_column_names):
+def main(pack_size, csv_column_names, path_to_file):
+    """Accept input a file path and pack_size, transduces file to target format.
+
+    Args:
+        pack_size: size fundamental processing unit. Most functions process input streams in
+            "pack_size"-width chunks.
+        csv_column_names: TODO refactor. This input should be requested within pdep_stream_gen if
+            transduction target == JSON.
+        path_to_file(str): path to file to transduce. Absolute, or relative to the main
+            project directory.
+    Returns:
+        The transduced file. E.g. for CSV to JSON, the JSON file that results from transducing
+            the input CSV file.
+    """
     #.encode() goes from a Unicode string to equivalent Unicode bytes
     #csv_byte_stream = int.from_bytes(pablo.readfile("Resources/test.csv").encode('utf-8'), 'big')
-    csv_file_as_str = pablo.readfile("Resources/test.csv")
+    csv_file_as_str = pablo.readfile(path_to_file)
 
     # print(csv_byte_stream)
     # print(bin(csv_byte_stream))
     # print(bin(int.from_bytes(csv_byte_stream.encode(), 'little')))
-    # for byte in pablo.readfile("Resources/test.csv"):   
+    # for byte in pablo.readfile("Resources/test.csv"):
     #     print(bin(int.from_bytes(byte.encode(), 'big')))
     #     print(ord(byte))
 
@@ -132,5 +153,5 @@ def main(pack_size, csv_column_names):
     # return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col1", "col2", "col3"])
+    main(64, ["col1", "col2", "col3"], "Resources/test.csv")
     
