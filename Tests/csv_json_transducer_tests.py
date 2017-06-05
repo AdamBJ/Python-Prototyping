@@ -43,7 +43,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         field_width_marker_stream = csv_json_transducer.create_field_width_ms(pext_ms,
                                                                               len(csv_file_as_str))
         idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
-        pdep_ms = csv_json_transducer.generate_pdep_stream(pablo.BitStream(field_width_marker_stream),
+        pdep_ms = csv_json_transducer.create_pdep_stream(pablo.BitStream(field_width_marker_stream),
                                                            pablo.BitStream(idx_ms),
                                                            pack_size, TransductionTarget.JSON,
                                                            ["col1", "col2", "col3"])

@@ -14,13 +14,13 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
-from src.pdep_stream_gen import generate_pdep_stream
+from src.pdep_stream_gen import create_pdep_stream
 
 class TestPDEPStreamGenMethods(unittest.TestCase):
     """Test the functions in pdep_stream_gen_unit_tests.py with PyUnit.
 
     We perform integration testing for the pdep_stream_gen.py module
-    by verifying the behaviour of the generate_pdep_stream function,
+    by verifying the behaviour of the create_pdep_stream function,
     which calls the other functions defined in pdep_stream_gen.py
     """
     def test_empty_file(self):
@@ -28,7 +28,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         target_format = TransductionTarget.JSON
         csv_column_names = ["col1", "col2", "col3"]
 
-        pdep_marker_stream = pablo.BitStream(generate_pdep_stream([],
+        pdep_marker_stream = pablo.BitStream(create_pdep_stream([],
                                                                   target_format,
                                                                   csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 0)
@@ -42,7 +42,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         target_format = TransductionTarget.JSON
         csv_column_names = ["col1", "col2", "col3"]
 
-        pdep_marker_stream = pablo.BitStream(generate_pdep_stream([3, 3, 3],
+        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3],
                                                                   target_format,
                                                                   csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 1879277596)
@@ -56,7 +56,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         target_format = TransductionTarget.JSON
         csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
 
-        pdep_marker_stream = pablo.BitStream(generate_pdep_stream([3, 0, 3, 5, 3],
+        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 0, 3, 5, 3],
                                                                   target_format,
                                                                   csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 63050402300395548)
@@ -75,7 +75,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         target_format = TransductionTarget.JSON
         csv_column_names = ["한국어", "中文", "English"]
 
-        pdep_marker_stream = pablo.BitStream(generate_pdep_stream([3, 3, 3],
+        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3],
                                                                   target_format,
                                                                   csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 60131377180)

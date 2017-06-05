@@ -1,6 +1,6 @@
 """ Contains functions used for pdep marker stream geneartion.
 
-generate_pdep_stream:
+create_pdep_stream:
 Main driver function, produces a pdep stream.
 
 transduce_field: Given a field (string of 1 bits) and field type,
@@ -24,7 +24,7 @@ from src import pablo
 from src.field_width import calculate_field_widths
 
 #TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
-def generate_pdep_stream(field_widths, target_format, csv_column_names):
+def create_pdep_stream(field_widths, target_format, csv_column_names):
     """Generate a bit mask stream for use with the PDEP operation.
 
     Takes as input a PEXT marker stream and index marker stream and produces a PDEP
@@ -56,7 +56,7 @@ def generate_pdep_stream(field_widths, target_format, csv_column_names):
         The pdep bit stream.
 
     Examples:
-        >>> generate_pdep_stream(100010001000, 1, 64, TransductionTarget.JSON,
+        >>> create_pdep_stream(100010001000, 1, 64, TransductionTarget.JSON,
                                  ["col1", "col2", "col3"])
         1879277596
 
@@ -131,6 +131,6 @@ if __name__ == '__main__':
     TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
     CSV_COLUMN_NAMES = ["col1", "col2", "col3"] # assume we're given as input or can parse
 
-    generate_pdep_stream(FIELD_WIDTH_STREAM_WRAPPER, IDX_MARKER_STREAM_WRAPPER, PACK_SIZE, 
+    create_pdep_stream(FIELD_WIDTH_STREAM_WRAPPER, IDX_MARKER_STREAM_WRAPPER, PACK_SIZE, 
                          TARGET_FORMAT, CSV_COLUMN_NAMES)
 

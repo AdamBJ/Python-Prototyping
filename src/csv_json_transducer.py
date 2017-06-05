@@ -14,7 +14,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
-from src.pdep_stream_gen import generate_pdep_stream
+from src.pdep_stream_gen import create_pdep_stream
 from src import field_width 
 
 
@@ -131,7 +131,7 @@ def main(pack_size, csv_column_names, path_to_file):
                                                       pablo.BitStream(idx_marker_stream),
                                                       pack_size)
 
-    pdep_marker_stream = generate_pdep_stream(field_widths, TransductionTarget.JSON, csv_column_names)
+    pdep_marker_stream = create_pdep_stream(field_widths, TransductionTarget.JSON, csv_column_names)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
     #print("pdep_marker_stream hex", hex(pdep_marker_stream))
     #json_bp_byte_stream = create_bpb_stream(TransductionTarget.json, field_widths)
