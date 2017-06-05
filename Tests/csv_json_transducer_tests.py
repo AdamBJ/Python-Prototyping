@@ -19,6 +19,11 @@ from src import csv_json_transducer
 class TestCSVJSONTransducerMethods(unittest.TestCase):
     """Contains a mix of unit tests and integration/system tests."""
 
+    def test_bad_input(self):
+        """Test with pack_size that isn't a power of 2"""
+        pack_size = 63
+        self.assertRaises(ValueError, csv_json_transducer.main, pack_size, [""], "")
+
     def test_create_pext_ms(self):
         """Unit test for create_pext_ms."""
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")

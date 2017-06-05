@@ -24,8 +24,7 @@ from src import pablo
 from src.field_width import calculate_field_widths
 
 #TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
-def generate_pdep_stream(field_width_stream_wrapper, idx_marker_stream_wrapper, pack_size,
-                         target_format, csv_column_names):
+def generate_pdep_stream(field_widths, target_format, csv_column_names):
     """Generate a bit mask stream for use with the PDEP operation.
 
     Takes as input a PEXT marker stream and index marker stream and produces a PDEP
@@ -63,16 +62,7 @@ def generate_pdep_stream(field_width_stream_wrapper, idx_marker_stream_wrapper, 
 
         1879277596 when viewed as a bit stream is ..........111..........111..........111..
     """
-    if field_width_stream_wrapper.value < 0 or idx_marker_stream_wrapper.value < 0 or pack_size < 0:
-        raise ValueError("Input streams cannot be represented by negative integers.")
-    elif pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
-    # Credit to A.Polino for this check
-        raise ValueError("Pack size must be a power of two.")
-
-    #print(bin(field_width_stream_wrapper.value)) # debug
     pdep_marker_stream = pablo.BitStream(0)
-    field_widths = calculate_field_widths(field_width_stream_wrapper, idx_marker_stream_wrapper,
-                                          pack_size)
     field_type = 0
     # process fields in the order they appear in the file, i.e. from left to right
     for field_width in field_widths:

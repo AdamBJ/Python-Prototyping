@@ -15,6 +15,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.pdep_stream_gen import generate_pdep_stream
+from src import field_width 
 
 
 def create_pext_ms(target_format, input_file_contents):
@@ -114,30 +115,26 @@ def main(pack_size, csv_column_names, path_to_file):
         The transduced file. E.g. for CSV to JSON, the JSON file that results from transducing
             the input CSV file.
     """
-    #.encode() goes from a Unicode string to equivalent Unicode bytes
-    #csv_byte_stream = int.from_bytes(pablo.readfile("Resources/test.csv").encode('utf-8'), 'big')
+    if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
+        # Credit to A.Polino for this check
+        raise ValueError("Pack size must be a power of two.")
+
     csv_file_as_str = pablo.readfile(path_to_file)
 
-    # print(csv_byte_stream)
-    # print(bin(csv_byte_stream))
-    # print(bin(int.from_bytes(csv_byte_stream.encode(), 'little')))
-    # for byte in pablo.readfile("Resources/test.csv"):
-    #     print(bin(int.from_bytes(byte.encode(), 'big')))
-    #     print(ord(byte))
-
     pext_marker_stream = create_pext_ms(TransductionTarget.JSON, csv_file_as_str)
-    print("pext_marker_stream:", bin(pext_marker_stream))
+    #print("pext_marker_stream:", bin(pext_marker_stream))
     idx_marker_stream = create_idx_ms(pext_marker_stream, pack_size)
-    print("idx_marker_stream:", bin(idx_marker_stream))
+    #print("idx_marker_stream:", bin(idx_marker_stream))
     field_width_marker_stream = create_field_width_ms(pext_marker_stream, len(csv_file_as_str))
-    print("field_width_marker_stream:", bin(field_width_marker_stream))
+    #print("field_width_marker_stream:", bin(field_width_marker_stream))
+    field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
+                                                      pablo.BitStream(idx_marker_stream),
+                                                      pack_size)
 
-    pdep_marker_stream = generate_pdep_stream(pablo.BitStream(field_width_marker_stream),
-                                              pablo.BitStream(idx_marker_stream),
-                                              pack_size, TransductionTarget.JSON, csv_column_names)
+    pdep_marker_stream = generate_pdep_stream(field_widths, TransductionTarget.JSON, csv_column_names)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
-    print("pdep_marker_stream hex", hex(pdep_marker_stream))
-    # json_bp_byte_stream = create_bpb_stream(TransductionTarget.json)
+    #print("pdep_marker_stream hex", hex(pdep_marker_stream))
+    #json_bp_byte_stream = create_bpb_stream(TransductionTarget.json, field_widths)
 
     # json_bp_bit_streams = pablo.BasisBits()
     # csv_bit_streams = pablo.BasisBits()
