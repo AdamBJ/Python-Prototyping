@@ -135,7 +135,7 @@ def insert_field(field_wrapper, pdep_marker_stream, shift_amount):
 
 if __name__ == '__main__':
     # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-    FIELD_WIDTH_STREAM_WRAPPER = pablo.BitStream(int('100010001000', 2))
+    FIELD_WIDTH_STREAM_WRAPPER = pablo.BitStream(int("100010001000", 2))
     IDX_MARKER_STREAM_WRAPPER = pablo.BitStream(1)
     PACK_SIZE = 64 #user can optionally specify
     TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?

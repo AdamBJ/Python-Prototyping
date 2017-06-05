@@ -136,6 +136,7 @@ def main(pack_size, csv_column_names, path_to_file):
                                               pablo.BitStream(idx_marker_stream),
                                               pack_size, TransductionTarget.JSON, csv_column_names)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
+    print("pdep_marker_stream hex", hex(pdep_marker_stream))
     # json_bp_byte_stream = create_bpb_stream(TransductionTarget.json)
 
     # json_bp_bit_streams = pablo.BasisBits()
@@ -153,5 +154,5 @@ def main(pack_size, csv_column_names, path_to_file):
     # return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col1", "col2", "col3"], "Resources/test.csv")
+    main(64, ["col1", "col2", "col3"], "Resources/Test/test.csv")
     
