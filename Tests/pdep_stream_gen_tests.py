@@ -29,8 +29,8 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         csv_column_names = ["col1", "col2", "col3"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([],
-                                                                  target_format,
-                                                                  csv_column_names))
+                                                                target_format,
+                                                                csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 0)
 
     def test_simple(self):
@@ -43,8 +43,8 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         csv_column_names = ["col1", "col2", "col3"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3],
-                                                                  target_format,
-                                                                  csv_column_names))
+                                                                target_format,
+                                                                csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 1879277596)
 
     def test_simple2(self):
@@ -57,8 +57,8 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 0, 3, 5, 3],
-                                                                  target_format,
-                                                                  csv_column_names))
+                                                                target_format,
+                                                                csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 63050402300395548)
 
     def test_unicode(self):
@@ -76,8 +76,8 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         csv_column_names = ["한국어", "中文", "English"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3],
-                                                                  target_format,
-                                                                  csv_column_names))
+                                                                target_format,
+                                                                csv_column_names))
         self.assertEqual(pdep_marker_stream.value, 60131377180)
 
 if __name__ == '__main__':

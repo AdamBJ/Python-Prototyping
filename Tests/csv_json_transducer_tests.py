@@ -15,6 +15,8 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src import csv_json_transducer
+from src import field_width
+from src import pdep_stream_gen
 
 class TestCSVJSONTransducerMethods(unittest.TestCase):
     """Contains a mix of unit tests and integration/system tests."""
@@ -43,10 +45,12 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         field_width_marker_stream = csv_json_transducer.create_field_width_ms(pext_ms,
                                                                               len(csv_file_as_str))
         idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
-        pdep_ms = csv_json_transducer.create_pdep_stream(pablo.BitStream(field_width_marker_stream),
-                                                           pablo.BitStream(idx_ms),
-                                                           pack_size, TransductionTarget.JSON,
-                                                           ["col1", "col2", "col3"])
+        field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
+                                                          pablo.BitStream(idx_ms),
+                                                          pack_size)
+        pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
+                                                     TransductionTarget.JSON,
+                                                     ["col1", "col2", "col3"])
 
         self.assertEqual(pdep_ms, int("1100000000001110000000000111100", 2))
 

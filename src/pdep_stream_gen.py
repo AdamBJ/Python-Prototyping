@@ -27,7 +27,7 @@ from src.field_width import calculate_field_widths
 def create_pdep_stream(field_widths, target_format, csv_column_names):
     """Generate a bit mask stream for use with the PDEP operation.
 
-    Takes as input a PEXT marker stream and index marker stream and produces a PDEP
+    Takes as input a list containing field widths and a target format and produces a PDEP
     marker stream. The PDEP marker stream shows where in an output stream the extracted
     bits should be inserted in order to complete the desired transduction operation.
 
@@ -44,11 +44,7 @@ def create_pdep_stream(field_widths, target_format, csv_column_names):
     right to left.
 
     Args:
-        field_width_stream_wrapper: Sequences of zeroes in this stream correspond to fields.
-            Scan through the sequences and count the number of zeroes to determine field widths.
-        idx_marker_stream_wrapper: Tells us which packs (clusters of pack_size bits) in field widths
-            stream contain at least a single field.
-        pack_size: Integer describing the width of a pack.
+        field_widths: The widths of the fields contained in the input file.
         target_format: E.g. JSON, CSV, ...
         csv_column_names: Names of the columns in the input CSV file (if target_format == JSON)
 
@@ -56,7 +52,7 @@ def create_pdep_stream(field_widths, target_format, csv_column_names):
         The pdep bit stream.
 
     Examples:
-        >>> create_pdep_stream(100010001000, 1, 64, TransductionTarget.JSON,
+        >>> create_pdep_stream([3, 3, 3], TransductionTarget.JSON,
                                  ["col1", "col2", "col3"])
         1879277596
 
