@@ -18,6 +18,8 @@ from src import csv_json_transducer
 from src import field_width
 from src import pdep_stream_gen
 
+#TODO More *realistic* tests. Visually inspect output JSON, save as "verified" output. Test
+#program's output against. Umple did this type of test.
 class TestCSVJSONTransducerMethods(unittest.TestCase):
     """Contains a mix of unit tests and integration/system tests."""
 
@@ -53,6 +55,9 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
                                                      ["col1", "col2", "col3"])
 
         self.assertEqual(pdep_ms, int("1100000000001110000000000111100", 2))
+    def test_create_bp_bs(self):
+        # TODO input of 123 result in '{\ncol1: ___,\n'!!
+        self.assertEqual(1,2)
 
     def test_second_half(self):
         """Integration test verifying the second half of the transducer."""

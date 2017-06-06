@@ -38,7 +38,7 @@ def readfile(filename):
 def transpose_streams(s, b):
     mask = 128
     index = 0
-    global data
+    #global data
     while index < 8:
         current = 0
         cursor = 1
@@ -65,7 +65,7 @@ def transpose_streams(s, b):
             b.bit_6 = current
         elif index == 8:
             b.bit_7 = current
-    data  = s
+    #data  = s
     return cursor-1  # EOF mask
 
 def match(s,marker):
@@ -183,18 +183,6 @@ def extract_bit(strm, pos):
     bit = (strm >> pos) & 1
     return bit
 
-def inverse_transpose(bitset, len):
-    bytestream=""
-    cursor = 1
-    for i in range(0, len):
-        byteval = 0
-        for j in range(0,8):
-            if bitset[j] & cursor != 0:
-                byteval += 128 >> j
-        bytestream += chr(byteval)
-        cursor += cursor
-    return bytestream
-
 def filter_bits(bitstream, delmask):
     newstream = 0
     cursor = 1
@@ -306,17 +294,64 @@ def get_popcount(bits):
         count += 1
     return count
 
+def serial_to_parallel(byte_stream, bit_streams):
+    """
+    We read a file from left to right. By analogy with how a number is laid out
+    on paper, we read a file from "most significant position" to "least sig posn".
+    The pablo functions are designed to start processing from the least sig position
+    to the most sig position (right to left), though. This mismatch hurts my brain.
+
+    We read the parallel bit streams from left to right, just like a file (since PBS
+    are just a transposed view of the original file byte stream). We *build* PBS from
+    right to left, though. That requires some minor logical acrobatics. We read the first
+    byte from the input byte stream, decompose it and add into PBS, then shift each PBS left by
+    one bit position before repeating the process with the next byte. Older bits appear farther
+    left in the PBS. The net effect of this approach is that the final byte of the file appears
+    as the final bit of the PBS.
+
+    To makes things ever more ridiculous, we process each *byte* from right to left. Like this:
+    11110101 & 1 = bit position 7.
+    11110101 >> 1 = 01111010
+    01111010 & 1 = bit position 6.
+    ...
+    """
+    for j, byte in enumerate(byte_stream):
+        byte = ord(byte) # get integer representing code point
+        bit_ordinality = 7 # 0 indexed
+        #print(bin(byte))
+        for i in range(8):
+            #print("b4 ", bin(bit_streams[bit_ordinality]))
+            bit = (byte >> i) & 1
+            bit_streams[bit_ordinality] |= bit
+            if j != (len(byte_stream) - 1): # not fastest way to do this, but it is clearest
+                bit_streams[bit_ordinality] <<= 1
+            #print("bit stream", bit_ordinality, bin(bit_streams[bit_ordinality]))
+            bit_ordinality -= 1
+    #print(bit_streams)
+
+def inverse_transpose(bitset, len):
+    """
+
+    We read PBS like file, from left to right. Leftmost bit corresponds to
+    first byte in file. However, PBS are integers and the easiest way to extract each
+    bit is to AND each stream with 1 (i.e. at the least significant bit position).
+    We use this "and with 1" approach, so we process
+    the PBSs "backwards" (i.e. from the last byte in the file to the first). That's why
+    we do bytestream = chr(byteval) + bytestream instead of bytestream += chr(byteval).
+    """
+    bytestream=""
+    cursor = 1
+    for i in range(0, len):
+        byteval = 0
+        for j in range(8):
+            if bitset[j] & cursor != 0:
+                # 0th pbs contains most sig bit
+                byteval += 128 >> j # 128 = 10000000
+        bytestream = chr(byteval) + bytestream
+        cursor += cursor # *2, equiv to << 1
+    return bytestream
+
 class BitStream:
     """Workaround to allow pass-by-value for ints."""
     def __init__(self, value):
         self.value = value
-
-class BasisBits():
-    bit_0 = 0
-    bit_1 = 0
-    bit_2 = 0
-    bit_3 = 0
-    bit_4 = 0
-    bit_5 = 0
-    bit_6 = 0
-    bit_7 = 0
