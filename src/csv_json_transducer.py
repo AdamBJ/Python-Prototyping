@@ -15,7 +15,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.pdep_stream_gen import create_pdep_stream
-from src import field_width 
+from src import field_width
 
 
 def create_pext_ms(target_format, input_file_contents):
@@ -43,13 +43,15 @@ def create_pext_ms(target_format, input_file_contents):
             if character != ',':
                 pext_marker_stream |= 1
             pext_marker_stream <<= 1
-        pext_marker_stream >>= 1 #TODO document this if you can't find a better solution
+        pext_marker_stream >>= 1  # TODO document this if you can't find a better solution
     else:
         raise ValueError("Only CSV to JSON transduction is supported.")
 
     return pext_marker_stream
 
-#TODO add this to pablo.py for others to use?
+# TODO add this to pablo.py for others to use?
+
+
 def create_idx_ms(marker_stream, pack_size):
     """Scan through marker_stream to identify packs with set bits.
 
@@ -78,6 +80,7 @@ def create_idx_ms(marker_stream, pack_size):
 
     return idx_marker_stream
 
+
 def create_field_width_ms(pext_marker_stream, input_file_length):
     """Convert pext_marker_stream to field_width_ms.
 
@@ -98,10 +101,12 @@ def create_field_width_ms(pext_marker_stream, input_file_length):
     """
     field_width_stream_wrapper = ~pext_marker_stream
     field_width_stream_wrapper &= (1 << (input_file_length + 1)) - 1
-    #field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
+    # field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
     return field_width_stream_wrapper
 
-#TODO remove csv_column_names
+# TODO remove csv_column_names
+
+
 def create_bpb_stream(target, field_widths, num_fields_per_unit, csv_column_names):
     """Create boilerplate byte stream.
 
@@ -122,41 +127,39 @@ def create_bpb_stream(target, field_widths, num_fields_per_unit, csv_column_name
     """
     if target == TransductionTarget.JSON:
         # TODO prompt for column names
-        # This could be made more compact, but doing so makes it less readable.
         # quick and dirty concatenation
         #json_bp_byte_stream = "["
         json_bp_byte_stream = ""
         field_type = 0
-        for i,fw in enumerate(field_widths):
+        for i, fw in enumerate(field_widths):
             if field_type == 0:
                 # first field in JSON object
                 json_bp_byte_stream += "{\n"
-                json_bp_byte_stream += csv_column_names[field_type]
-                json_bp_byte_stream += ": "
-                json_bp_byte_stream += "_" * fw # space for CSV value. >>= field_width?
-                json_bp_byte_stream += ",\n"
-            elif field_type == (num_fields_per_unit - 1):
+
+            json_bp_byte_stream += csv_column_names[field_type]
+            json_bp_byte_stream += ": "
+            json_bp_byte_stream += "_" * fw  # space for CSV value. >>= field_width?
+
+            if field_type == (num_fields_per_unit - 1):
                 # final field
-                json_bp_byte_stream += csv_column_names[field_type]
-                json_bp_byte_stream += ": "
-                json_bp_byte_stream += "_" * fw # space for CSV value. >>= field_width?
                 json_bp_byte_stream += "\n}"
+                field_type = -1  # reset
                 # can probably do this check in Pbix by comparing produced/processed count
-                #if i == len(field_widths) - 1:
-                    #json_bp_byte_stream += ","
+                # if i == len(field_widths) - 1:
+                #json_bp_byte_stream += ","
             else:
-                # middle field
-                json_bp_byte_stream += csv_column_names[field_type]
-                json_bp_byte_stream += ": "
-                json_bp_byte_stream += "_" * fw # space for CSV value. >>= field_width?
+                # first or middle field
                 json_bp_byte_stream += ",\n"
+
             field_type += 1
         #json_bp_byte_stream += "]"
 
         return json_bp_byte_stream
 
     else:
-        raise ValueError("Only CSV to JSON transduction is currently supported.")
+        raise ValueError(
+            "Only CSV to JSON transduction is currently supported.")
+
 
 def apply_pext(bit_stream, pext_marker_stream, field_widths):
     extracted_bit_stream = 0
@@ -168,13 +171,13 @@ def apply_pext(bit_stream, pext_marker_stream, field_widths):
         bit_stream >>= leading_zeroes + fw
         field = (1 << fw) - 1
         field <<= leading_zeroes
-        field |= bit_stream # field now contains extracted bit stream data
+        field |= bit_stream  # field now contains extracted bit stream data
 
         shift_amnt += fw
         extracted_bit_stream = (extracted_bit_stream << shift_amnt) | field
     return extracted_bit_stream
-    
-#def apply_pdep(bp_bit_stream, pdep_marker_stream):
+
+# def apply_pdep(bp_bit_stream, pdep_marker_stream):
 
 
 def main(pack_size, csv_column_names, path_to_file):
@@ -197,20 +200,25 @@ def main(pack_size, csv_column_names, path_to_file):
 
     csv_file_as_str = pablo.readfile(path_to_file)
 
-    pext_marker_stream = create_pext_ms(TransductionTarget.JSON, csv_file_as_str)
+    pext_marker_stream = create_pext_ms(
+        TransductionTarget.JSON, csv_file_as_str)
     #print("pext_marker_stream:", bin(pext_marker_stream))
     idx_marker_stream = create_idx_ms(pext_marker_stream, pack_size)
     #print("idx_marker_stream:", bin(idx_marker_stream))
-    field_width_marker_stream = create_field_width_ms(pext_marker_stream, len(csv_file_as_str))
+    field_width_marker_stream = create_field_width_ms(
+        pext_marker_stream, len(csv_file_as_str))
     #print("field_width_marker_stream:", bin(field_width_marker_stream))
     field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                      pablo.BitStream(idx_marker_stream),
+                                                      pablo.BitStream(
+                                                          idx_marker_stream),
                                                       pack_size)
 
-    pdep_marker_stream = create_pdep_stream(field_widths, TransductionTarget.JSON, csv_column_names)
+    pdep_marker_stream = create_pdep_stream(
+        field_widths, TransductionTarget.JSON, csv_column_names)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
     #print("pdep_marker_stream hex", hex(pdep_marker_stream))
-    json_bp_byte_stream = create_bpb_stream(TransductionTarget.JSON, field_widths, len(csv_column_names), csv_column_names)
+    json_bp_byte_stream = create_bpb_stream(
+        TransductionTarget.JSON, field_widths, len(csv_column_names), csv_column_names)
     #pablo.writefile('test.json', json_bp_byte_stream)
 
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -220,13 +228,14 @@ def main(pack_size, csv_column_names, path_to_file):
     #frankenflap = pablo.inverse_transpose(json_bp_bit_streams,)
 
     for i in range(8):
-        extracted_bits_stream = apply_pext(json_bp_bit_streams.bit_1, pext_marker_stream, field_widths)
-        #apply_pdep(ith json bp stream, pdep_marker_stream)
+        extracted_bits_stream = apply_pext(
+            json_bp_bit_streams.bit_1, pext_marker_stream, field_widths)
+        # apply_pdep(ith json bp stream, pdep_marker_stream)
 
-    #output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(csv_file_as_str) + number BP bytes added)
+    # output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(csv_file_as_str) + number BP bytes added)
     #pablo.writefile('out.json', output_byte_stream)
-    #return output_byte_stream
+    # return output_byte_stream
+
 
 if __name__ == '__main__':
-    main(64, ["col1", "col2", "col3"], "Resources/Test/s2p_test.csv")
-    
+    main(64, ["col1"], "Resources/Test/s2p_test.csv")
