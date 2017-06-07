@@ -52,7 +52,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
         pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
-        idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
+        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pext_ms,
                                                           idx_ms,
                                                           pack_size)
@@ -63,14 +63,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(resassemble_test, "12,abc,flap")
 
         for i, stream in enumerate(csv_bit_streams):
-            extracted_bit_streams[i] = csv_json_transducer.apply_pext(stream, pext_ms, field_widths)
+            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms, field_widths)
 
         extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
         self.assertEqual(extracted_byte_stream, "12abcflap")
 
     def test_create_idx_ms(self):
         """Unit test for create_idx_ms."""
-        idx_ms = csv_json_transducer.create_idx_ms(int("11011101111", 2), 64)
+        idx_ms = pablo.create_idx_ms(int("11011101111", 2), 64)
         self.assertEqual(idx_ms, 1)
 
     def test_first_half(self):
@@ -79,7 +79,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = csv_json_transducer.create_pext_ms(
             csv_file_as_str)
-        idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
+        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pext_ms,
                                                           idx_ms,
                                                           pack_size)
@@ -95,7 +95,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pext_ms = csv_json_transducer.create_pext_ms(
             csv_file_as_str)
         pack_size = 64
-        idx_marker_stream = csv_json_transducer.create_idx_ms(
+        idx_marker_stream = pablo.create_idx_ms(
             pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pext_ms, idx_marker_stream, pack_size)
         json_bp_byte_stream = csv_json_transducer.create_bpb_stream(

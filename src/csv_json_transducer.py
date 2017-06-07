@@ -1,6 +1,6 @@
 """
 Contains the "main" method that we call to transduce a field in one format
-to a field in another format. Currently the only transduction operation 
+to a field in another format. Currently the only transduction operation
 supported is CSV to JSON.
 """
 import sys
@@ -50,38 +50,7 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
 
 # TODO add this to pablo.py for others to use?
 
-
-def create_idx_ms(marker_stream, pack_size):
-    """Scan through marker_stream to identify packs with set bits.
-
-    Quick-and-dirty python implementation of idxMarkerStream Parabix kernel.
-    Whereas the Parabix kernel using simd operations to generate the idx
-    stream quickly, this function simply does a sequential scan of the input
-    stream to identify packs of interest.
-
-    Args:
-        marker_stream (int): The stream to scan through.
-        pack_size (int): The final index stream is marker_stream length / pack_size
-            bits long. Each bit of the index stream represents a pack_size "pack"
-            of input stream bits. If the index stream bit is set, that means the
-            pack contains at least one set bit and requires processing.
-    Returns:
-        idx_marker_stream (int): See pack_size comment.
-    """
-    idx_marker_stream = 0
-    pack_mask = (1 << pack_size) - 1
-
-    while marker_stream:
-        non_empty_pack = pablo.any(pack_mask & marker_stream)
-        marker_stream >>= pack_size
-        idx_marker_stream <<= 1
-        idx_marker_stream = idx_marker_stream | non_empty_pack
-
-    return idx_marker_stream
-
 # TODO remove csv_column_names
-
-
 def create_bpb_stream(field_widths, num_fields_per_unit, csv_column_names, target=TransductionTarget.JSON):
     """Create boilerplate byte stream.
 
@@ -135,84 +104,6 @@ def create_bpb_stream(field_widths, num_fields_per_unit, csv_column_names, targe
         raise ValueError(
             "Only CSV to JSON transduction is currently supported.")
 
-
-def apply_pext(bit_stream, pext_marker_stream, field_widths):
-    """Apply quick-and-dirty python version of PEXT to bit_stream.
-
-    We process bit_stream from right to left, but we read it (as humans) from left to right.
-    Therefore, the last field we processes should appear first in the resulting
-    extracted bit stream.
-
-    Args:
-        bit_stream: The bit stream we'll extract bits from.
-        pext_marker_stream: The marker stream that tells us which bit positions in bit_stream
-            to extract bits from.
-        field_widths: List that tells us the width of each field that will be extracted from
-            the bit_stream. Fields are sequences of 1 bits in pext_marker_stream.
-    Returns:
-        extracted_bit_stream: The bit stream that results from extracting bits from bit_stream
-            at the locations indicated by pext_marker_stream.
-    Example:
-        bit_stream:         1010001110
-        pext_marker_stream: 1111110001
-        field_widths: [6,1]
-
-        extracted_bit_stream: 1010000
-    """
-    extracted_bit_stream = 0
-    shift_amnt = 0
-    #print(bin(bit_stream))
-    #print(bin(pext_marker_stream))
-    for fw in reversed(field_widths):
-        leading_zeroes = pablo.count_leading_zeroes(pext_marker_stream)
-        field = (1 << fw) - 1
-        field <<= leading_zeroes
-        field &= bit_stream
-        field >>= leading_zeroes # field now contains extracted bit stream data
-
-        # reset pext_marker_stream bits belonging to the field we just processed
-        pext_marker_stream = pext_marker_stream & ~((1 << (leading_zeroes + fw)) - 1)
-        extracted_bit_stream = (field << shift_amnt) | extracted_bit_stream
-        shift_amnt += fw
-    return extracted_bit_stream
-
-def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits_stream,
-               field_widths):
-    """Apply quick-and-dirty Python version of pdep to bp_bit_streams[bp_stream_idx].
-
-    Like apply pext, we process streams from right to left but read them from left to right.
-    field_widths maintains the left to right orientation, so we go through it backwards.
-
-    Args:
-        bp_bit_streams: Stream set that contains the stream the pext operation will be applied on.
-        bp_stream_idx: Index in bp_bit_streams of the stream we will apply the pdep operation to.
-        pdep_marker_stream: Marker stream that tells us the positions within bp_bit_streams[bp_stream_idx]
-            that the extracted bits should be deposited.
-        extracted_bits_stream: The stream we will be inserting into bp_bit_streams[bp_stream_idx] at the
-            locations indicated by pdep_marker_streams. Consists of extracted field bits, e.g. for a CSV file
-            extracted_bits_stream could be obtained by applying s2p on a version of the CSV file with the
-            delimiters stripped out (we use a PEXT operation, though).
-        field_widths: the widths of the fields contained in extracted_bits_stream. Remeber that extracted_
-        bits_stream is a bit stream, not a byte stream. We need to combine 8 extracted_bits_streams using
-        p2s to obtain the fields byte stream.
-    Example:
-        extracted_bits_stream =        101011
-        pdep_marker_stream =           000000001110000000011100000000
-        bp_bit_stream[bp_stream_idx] = 000000000000000000000000000000
-
-        bp_bit_stream[bp_stream_idx] = 000000001010000000001100000000
-    """
-    for fw in reversed(field_widths):
-        leading_zeroes = pablo.count_leading_zeroes(pdep_marker_stream)
-        field = ((1 << fw) - 1)
-        bp_bit_streams[bp_stream_idx] &= ~(field << leading_zeroes) # zero out deposit field
-        field &= extracted_bits_stream
-        extracted_bits_stream >>= fw
-        bp_bit_streams[bp_stream_idx] |= (field << leading_zeroes)
-
-        # reset pdep_marker_stream bits belonging to the field we just processed
-        pdep_marker_stream = pdep_marker_stream & ~((1 << (leading_zeroes + fw)) - 1)
-
 def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTarget.JSON,
          source_format=TransductionTarget.CSV):
     """Accept path to file in source_format and pack_size. Transduces file to target_format.
@@ -236,7 +127,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
 
     csv_file_as_str = pablo.readfile(path_to_file)
     pext_marker_stream = create_pext_ms(csv_file_as_str, target_format)
-    idx_marker_stream = create_idx_ms(pext_marker_stream, pack_size)
+    idx_marker_stream = pablo.create_idx_ms(pext_marker_stream, pack_size)
     field_widths = field_width.calculate_field_widths(pext_marker_stream,
                                                       idx_marker_stream,
                                                       pack_size)
@@ -248,8 +139,8 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
     for i in range(8):
-        extracted_bits_stream = apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
-        apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream, field_widths)
+        extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
+        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream, field_widths)
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
     #pablo.writefile('out.json', output_byte_stream)
@@ -258,7 +149,6 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     print("output_byte_stream:\n", output_byte_stream)
     print("pext_marker_stream:", bin(pext_marker_stream))
     print("idx_marker_stream:", bin(idx_marker_stream))
-    print("field_width_marker_stream:", bin(field_width_marker_stream))
     print("pdep_marker_stream:", bin(pdep_marker_stream))
 
 if __name__ == '__main__':
