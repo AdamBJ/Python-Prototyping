@@ -35,7 +35,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Unit test for create_pext_ms."""
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = csv_json_transducer.create_pext_ms(
-            TransductionTarget.JSON, csv_file_as_str)
+            csv_file_as_str)
         self.assertEqual(pext_ms, int("11011101111", 2))
 
     def test_create_extracted_bit_streams(self):
@@ -51,12 +51,10 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
-        pext_ms = csv_json_transducer.create_pext_ms(TransductionTarget.JSON, csv_file_as_str)
-        field_width_marker_stream = csv_json_transducer.create_field_width_ms(pext_ms,
-                                                                              len(csv_file_as_str))
+        pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
         idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                          pablo.BitStream(idx_ms),
+        field_widths = field_width.calculate_field_widths(pext_ms,
+                                                          idx_ms,
                                                           pack_size)
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -80,15 +78,12 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = csv_json_transducer.create_pext_ms(
-            TransductionTarget.JSON, csv_file_as_str)
-        field_width_marker_stream = csv_json_transducer.create_field_width_ms(pext_ms,
-                                                                              len(csv_file_as_str))
+            csv_file_as_str)
         idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                          pablo.BitStream(idx_ms),
+        field_widths = field_width.calculate_field_widths(pext_ms,
+                                                          idx_ms,
                                                           pack_size)
         pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
-                                                     TransductionTarget.JSON,
                                                      ["col1", "col2", "col3"])
 
         self.assertEqual(pdep_ms, int("1100000000001110000000000111100", 2))
@@ -97,19 +92,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
         csv_column_names = ["col1"]
         csv_file_as_str = pablo.readfile('Resources/Test/s2p_test.csv')
-        pext_marker_stream = csv_json_transducer.create_pext_ms(
-            TransductionTarget.JSON, csv_file_as_str)
+        pext_ms = csv_json_transducer.create_pext_ms(
+            csv_file_as_str)
         pack_size = 64
         idx_marker_stream = csv_json_transducer.create_idx_ms(
-            pext_marker_stream, pack_size)
-        #print("idx_marker_stream:", bin(idx_marker_stream))
-        field_width_marker_stream = csv_json_transducer.create_field_width_ms(
-            pext_marker_stream, len(csv_file_as_str))
-        #print("field_width_marker_stream:", bin(field_width_marker_stream))
-        field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                          pablo.BitStream(idx_marker_stream), pack_size)
+            pext_ms, pack_size)
+        field_widths = field_width.calculate_field_widths(pext_ms, idx_marker_stream, pack_size)
         json_bp_byte_stream = csv_json_transducer.create_bpb_stream(
-            TransductionTarget.JSON, field_widths, len(csv_column_names), csv_column_names)
+            field_widths, len(csv_column_names), csv_column_names)
         self.assertEqual('{\ncol1: ___\n}', json_bp_byte_stream)
 
     def test_second_half(self):

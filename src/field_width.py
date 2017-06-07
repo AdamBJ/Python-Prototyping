@@ -13,7 +13,7 @@ processing from the field we scanned last. This field is the first field to appe
 """
 from src import pablo
 
-def calculate_field_widths(field_width_stream_wrapper, idx_marker_stream_wrapper, pack_size):
+def calculate_field_widths(pext_marker_stream, idx_marker_stream, pack_size):
     """Calculate the field widths of all fields stored in field_width_stream_wrapper.value.
 
     idx_marker_stream_wrapper.value contains numberBitsInPEXTStream/packSize bits. Set bits in this
@@ -30,6 +30,10 @@ def calculate_field_widths(field_width_stream_wrapper, idx_marker_stream_wrapper
     E.g. field_width_stream_wrapper.value = 100010001000, idx_marker_stream_wrapper.value = 1,
     output =  [3,3,3]
     """
+    # Allows us to simulate pass-by-reference for our streams
+    field_width_stream_wrapper = pablo.BitStream(create_field_width_ms(pext_marker_stream))
+    idx_marker_stream_wrapper = pablo.BitStream(idx_marker_stream)
+
     field_widths = []
     field_start = -1
     while idx_marker_stream_wrapper.value:
@@ -96,3 +100,36 @@ def process_pack(field_width_stream_wrapper, field_widths, field_start, non_zero
         field_start = field_end
         pack_wrapper.value = pablo.reset_lowest_bit(pack_wrapper.value)
     return field_start
+
+def create_field_width_ms(pext_marker_stream):
+    """Convert pext_marker_stream to field_width_ms.
+
+    pext_marker_streams identifies fields as sequences of 1s. create_pdep_marker_stream
+    uses existing pablo functions that scan through sequences of 0s, and so sees fields as
+    sequences of 0s bounded by set bits. Another reason to use 0s as field markers
+    is that partial field detection is difficult when using 0s as field markers because of
+    the infinite number of trailing 0s with Pythons' unlimited precision integers.
+    To avoid these problems we need to convert the sequences of 1s in pext_marker_stream
+    to sequences of 0s before we pass it into create_pdep_ms.
+
+    First we take this inverse of the stream, then we AND it with a mask that will reset all the
+    leading 1 bits that result (except the first leading 1, we need that to denote the end of
+    the last field).
+
+    This function should not be neccesary in Parabix because C++ has finite
+    precision integers. We should be able to simple take the inverse of the pext_marker_stream.
+
+    Example:
+        pext_marker_stream (int): 11011101111, return 100100010001
+    """
+    temp = pext_marker_stream
+    end_of_fields_byte = 0
+    while pext_marker_stream:
+        end_of_fields_byte += 1
+        pext_marker_stream >>= 1
+    pext_marker_stream = temp
+
+    field_width_stream = ~pext_marker_stream
+    field_width_stream &= (1 << (end_of_fields_byte + 1)) - 1
+    # field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
+    return field_width_stream

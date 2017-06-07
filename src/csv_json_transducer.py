@@ -79,30 +79,6 @@ def create_idx_ms(marker_stream, pack_size):
 
     return idx_marker_stream
 
-
-def create_field_width_ms(pext_marker_stream, input_file_length):
-    """Convert pext_marker_stream to field_width_ms.
-
-    pext_marker_streams identifies fields as sequences of 1s. create_pdep_marker_stream
-    uses existing pablo functions that scan through sequences of 0s, and so sees fields as
-    sequences of 0s. That means we need to convert the sequences of 1s in pext_marker_stream
-    to sequences of 0s before we pass it into create_pdep_ms.
-
-    First we take this inverse of the stream, then we AND it with a mask that will reset all the
-    leading 1 bits that result (except the first leading 1, we need that to denote the end of
-    the last field).
-
-    Note that this function may not be neccesary in the final Parabix version. We can simply
-    add support to Pablo for scanning sequences of 1s.
-
-    Example:
-        pext_marker_stream (int): 11011101111, return 100100010001
-    """
-    field_width_stream_wrapper = ~pext_marker_stream
-    field_width_stream_wrapper &= (1 << (input_file_length + 1)) - 1
-    # field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
-    return field_width_stream_wrapper
-
 # TODO remove csv_column_names
 
 
@@ -259,11 +235,10 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
         raise ValueError("Pack size must be a power of two.")
 
     csv_file_as_str = pablo.readfile(path_to_file)
-    pext_marker_stream = create_pext_ms(target_format, csv_file_as_str)
+    pext_marker_stream = create_pext_ms(csv_file_as_str, target_format)
     idx_marker_stream = create_idx_ms(pext_marker_stream, pack_size)
-    field_width_marker_stream = create_field_width_ms(pext_marker_stream, len(csv_file_as_str))
-    field_widths = field_width.calculate_field_widths(pablo.BitStream(pext_marker_stream),
-                                                      pablo.BitStream(idx_marker_stream),
+    field_widths = field_width.calculate_field_widths(pext_marker_stream,
+                                                      idx_marker_stream,
                                                       pack_size)
     pdep_marker_stream = create_pdep_stream(field_widths, csv_column_names, target_format)
     json_bp_byte_stream = create_bpb_stream(
