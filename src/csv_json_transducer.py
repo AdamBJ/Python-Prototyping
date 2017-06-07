@@ -194,7 +194,9 @@ def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits
     """
     for fw in reversed(field_widths):
         leading_zeroes = pablo.count_leading_zeroes(pdep_marker_stream)
-        field = ((1 << fw) - 1) & extracted_bits_stream
+        field = ((1 << fw) - 1) 
+        bp_bit_streams[bp_stream_idx] &= ~(field << leading_zeroes) # zero out deposit field
+        field &= extracted_bits_stream
         extracted_bits_stream >>= fw
         bp_bit_streams[bp_stream_idx] |= (field << leading_zeroes)
 
@@ -233,11 +235,13 @@ def main(pack_size, csv_column_names, path_to_file):
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
+    extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0] #TODO temp
     for i in range(8):
-        extracted_bits_stream = apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
-        apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream, field_widths)
+        extracted_bit_streams[i] = apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
+        apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bit_streams[i], field_widths)
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
+    test_out = pablo.inverse_transpose(extracted_bit_streams, 3)
     #pablo.writefile('out.json', output_byte_stream)
     # return output_byte_stream
 
