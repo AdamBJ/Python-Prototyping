@@ -23,7 +23,7 @@ def calculate_field_widths(field_width_stream_wrapper, idx_marker_stream_wrapper
     we need to extract). Assuming pack size is 64, we would need to scan bits 192-256 for fields.
 
     The basic approach is to first scan through idx_marker_stream_wrapper.value to identify the
-    location of a pack with at least a single 1 bit et. We then extract field widths
+    location of a pack with at least a single 1 bit set. We then extract field widths
     from this pack. We continue until we've processed all the packs that contain
     field width information (i.e. until we've processed all set bits in idx_marker_stream).
 
@@ -58,7 +58,11 @@ def process_pack(field_width_stream_wrapper, field_widths, field_start, non_zero
     bits that are associated with a field. That means the first field width we calculate is the
     width of the field that appears *last* in the input file.
 
-    Fields are sequences of 0s between 1s. To calculate
+    Fields are sequences of 0s between 1s, and field start/end positions (1 bits) are not considered part of the fields
+    they delineate. For example, 10001 contains a field with width 3 between bits 1 and 3 (inclusive).
+    The field end markers are bits 0 and 4. These bits don't count towards the total fw.
+
+    To calculate
     a field width we subtract the absolute position of the field end marker (i.e. the 1 denoting
     the end of the field) from the absolute position of the field start marker. We then subtract 1
     from the resulting value to get the field width (i.e. the number of zeroes between the start
@@ -77,13 +81,17 @@ def process_pack(field_width_stream_wrapper, field_widths, field_start, non_zero
             to process.
         pack_size (int): number denoting the width of a pack. Typically 64.
     """
+    # Get the pack
     pack_mask = (1 << pack_size) - 1 # e.g. 8 bit mask -> 0...011111111
     aligned_pack_mask = pack_mask << (non_zero_pack_idx * pack_size)
-    aligned_pack = aligned_pack_mask & field_width_stream_wrapper.value
+    aligned_pack = aligned_pack_mask & field_width_stream_wrapper.value # got the pack
     pack = aligned_pack >> (non_zero_pack_idx * pack_size)
     pack_wrapper = pablo.BitStream(pack)
+
+    # Process the pack
+    abs_pack_start_posn = non_zero_pack_idx * pack_size
     while pack_wrapper.value:
-        field_end = pablo.count_leading_zeroes(pack_wrapper.value) + (non_zero_pack_idx * pack_size)
+        field_end = pablo.count_leading_zeroes(pack_wrapper.value) + abs_pack_start_posn
         field_widths.insert(0, field_end - field_start - 1)
         field_start = field_end
         pack_wrapper.value = pablo.reset_lowest_bit(pack_wrapper.value)

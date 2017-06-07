@@ -44,7 +44,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         Create pext_ms.
         Decompose CSV byte stream, apply pext to each resulting bit stream.
         Recombine extracted bit streams into extracted byte stream.
-        
+
         Example:
             CSV file: abc,123
             Result: abc123
@@ -129,7 +129,6 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         boilerplate_byte: {\nonesy: ____,\ntwo: __,\nflap!: _____,\ner:\n}
         output: {\nonesy: abcd,\ntwo: ff,\nflap!: 12345,\ner:\n}
         """
-        self.assertFalse(1)
 
 
 if __name__ == '__main__':

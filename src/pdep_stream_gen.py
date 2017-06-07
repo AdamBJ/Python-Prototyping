@@ -24,7 +24,7 @@ from src import pablo
 from src.field_width import calculate_field_widths
 
 #TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
-def create_pdep_stream(field_widths, target_format, csv_column_names):
+def create_pdep_stream(field_widths, csv_column_names, target_format = TransductionTarget.JSON):
     """Generate a bit mask stream for use with the PDEP operation.
 
     Takes as input a list containing field widths and a target format and produces a PDEP

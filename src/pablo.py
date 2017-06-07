@@ -350,6 +350,19 @@ def inverse_transpose(bitset, len):
         cursor += cursor # *2, equiv to << 1
     return bytestream
 
+def count_leading_ones(strm):
+    ones = 0
+    while (strm & 0xFFFFFFFF) == 0xFFFFFFFF:
+        ones += 32
+        strm >>= 32
+    while (strm & 1) == 1:
+        ones += 1
+        strm >>= 1
+    return ones
+
+def set_lowest_bit(bits):
+    return bits | (bits + 1)
+
 class BitStream:
     """Workaround to allow pass-by-value for ints."""
     def __init__(self, value):
