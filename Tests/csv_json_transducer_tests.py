@@ -38,6 +38,38 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             TransductionTarget.JSON, csv_file_as_str)
         self.assertEqual(pext_ms, int("11011101111", 2))
 
+    def test_create_extracted_bit_streams(self):
+        """Integration test for pext_ms creation, pext application, s2p, p2s operations.
+
+        Create pext_ms.
+        Decompose CSV byte stream, apply pext to each resulting bit stream.
+        Recombine extracted bit streams into extracted byte stream.
+        
+        Example:
+            CSV file: abc,123
+            Result: abc123
+        """
+        pack_size = 64
+        csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
+        pext_ms = csv_json_transducer.create_pext_ms(TransductionTarget.JSON, csv_file_as_str)
+        field_width_marker_stream = csv_json_transducer.create_field_width_ms(pext_ms,
+                                                                              len(csv_file_as_str))
+        idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
+        field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
+                                                          pablo.BitStream(idx_ms),
+                                                          pack_size)
+        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
+        resassemble_test = pablo.inverse_transpose(csv_bit_streams, 11)
+        self.assertEqual(resassemble_test, "12,abc,flap")
+
+        for i, stream in enumerate(csv_bit_streams):
+            extracted_bit_streams[i] = csv_json_transducer.apply_pext(stream, pext_ms, field_widths)
+
+        extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
+        self.assertEqual(extracted_byte_stream, "12abcflap")
+
     def test_create_idx_ms(self):
         """Unit test for create_idx_ms."""
         idx_ms = csv_json_transducer.create_idx_ms(int("11011101111", 2), 64)
@@ -53,8 +85,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
                                                                               len(csv_file_as_str))
         idx_ms = csv_json_transducer.create_idx_ms(pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                          pablo.BitStream(
-                                                              idx_ms),
+                                                          pablo.BitStream(idx_ms),
                                                           pack_size)
         pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
                                                      TransductionTarget.JSON,

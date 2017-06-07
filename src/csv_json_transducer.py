@@ -162,19 +162,27 @@ def create_bpb_stream(target, field_widths, num_fields_per_unit, csv_column_name
 
 
 def apply_pext(bit_stream, pext_marker_stream, field_widths):
+    """Apply quick-and-dirty version of PEXT to bit_stream.
+    
+    We process stream from right to left, but we read it (as humans) from left to right.
+    Therefore, the last field we processes should appear first in the resulting 
+    extracted bit stream.
+    """
     extracted_bit_stream = 0
     shift_amnt = 0
     #print(bin(bit_stream))
     #print(bin(pext_marker_stream))
-    for fw in field_widths:
+    for fw in reversed(field_widths):
         leading_zeroes = pablo.count_leading_zeroes(pext_marker_stream)
-        pext_marker_stream >>= leading_zeroes + fw
         field = (1 << fw) - 1
         field <<= leading_zeroes
-        field &= bit_stream  # field now contains extracted bit stream data
+        field &= bit_stream
+        field >>= leading_zeroes # field now contains extracted bit stream data
 
+        # reset pext_marker_stream bits belonging to the field we just processed
+        pext_marker_stream = pext_marker_stream & ~((1 << (leading_zeroes + fw)) - 1)
+        extracted_bit_stream = (field << shift_amnt) | extracted_bit_stream
         shift_amnt += fw
-        extracted_bit_stream = (extracted_bit_stream << shift_amnt) | field
     return extracted_bit_stream
 
 def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits_stream, field_widths):
@@ -182,9 +190,9 @@ def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits
     Example:
         extracted_bits_stream = 101011
         pdep_marker_stream = 000000001110000000011100000000
-        bp_bit_stream =       000000000000000000000000000000 -> final_bs = 000000001010000000001100000000
+        bp_bit_stream =      000000000000000000000000000000 -> final_bs = 000000001010000000001100000000
     """
-    for fw in field_widths:
+    for fw in reversed(field_widths):
         leading_zeroes = pablo.count_leading_zeroes(pdep_marker_stream)
         field = ((1 << fw) - 1) & extracted_bits_stream
         extracted_bits_stream >>= fw
