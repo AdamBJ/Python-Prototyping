@@ -119,14 +119,3 @@ def insert_field(field_wrapper, pdep_marker_stream, shift_amount):
     pdep_marker_stream.value = (pdep_marker_stream.value << shift_amount) \
                                | field_wrapper.value
 
-if __name__ == '__main__':
-    # Assume we're given the following streams (we need to use Parabix to create them dynamically)
-    FIELD_WIDTH_STREAM_WRAPPER = pablo.BitStream(int("100010001000", 2))
-    IDX_MARKER_STREAM_WRAPPER = pablo.BitStream(1)
-    PACK_SIZE = 64 #user can optionally specify
-    TARGET_FORMAT = TransductionTarget.JSON # this is the only user-provided value?
-    CSV_COLUMN_NAMES = ["col1", "col2", "col3"] # assume we're given as input or can parse
-
-    create_pdep_stream(FIELD_WIDTH_STREAM_WRAPPER, IDX_MARKER_STREAM_WRAPPER, PACK_SIZE, 
-                         TARGET_FORMAT, CSV_COLUMN_NAMES)
-

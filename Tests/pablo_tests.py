@@ -19,10 +19,11 @@ from src import field_width
 from src import pdep_stream_gen
 
 # Won't add many tests here. Just need it to work for purposes of prototype. Parabix does things
-# differently.
+# differently for these methods.
 class TestPabloMethods(unittest.TestCase):
     """Contains unit tests for the functions in pablo.py"""
-    def test_serial_to_parallel1(self):
+
+    def test_serial_to_parallel_and_back(self):
         """
         Input: CSV file containing 123
         Expected output: [0, 0, 7, 7, 0, 0, 3, 5]
@@ -40,9 +41,38 @@ class TestPabloMethods(unittest.TestCase):
             7 = 101
         """
         csv_file_as_str = pablo.readfile("Resources/Test/s2p_test.csv")
-        csv_bit_streams = pablo.BasisBits()
+        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-        self.assertEqual(csv_bit_streams.bit_streams, [0, 0, 7, 7, 0, 0, 3, 5])
+        self.assertEqual(csv_bit_streams, [0, 0, 7, 7, 0, 0, 3, 5])
+
+        reconstituted_bytes = pablo.inverse_transpose(csv_bit_streams, 3)
+        self.assertEqual('123', reconstituted_bytes)
+
+    def test_apply_pext(self):
+        """
+        pext_ms:                11101010111111110
+        bit_stream:             10101011101100011
+        extracted_bits_stream:  1111011110
+        """
+        self.assertFalse(1)
+
+    def test_apply_pext_csv_json(self):
+        """
+        csv_input:              abcd,ff,12345
+        pext_ms:                1111011011111
+        extracted_byte_stream:  abcdff12345
+        """
+        self.assertFalse(1)
+
+    def test_apply_pdep(self):
+        """
+        extracted_bits_stream: 111010111
+        pdep_ms:            11110111001001
+        targer_bit_stream:  00000000000000
+        result:             11100101001001
+        """
+        self.assertFalse(1)
+
 
 if __name__ == '__main__':
     unittest.main()

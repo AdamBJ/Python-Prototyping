@@ -315,16 +315,15 @@ def serial_to_parallel(byte_stream, bit_streams):
     01111010 & 1 = bit position 6.
     ...
     """
-    for j, byte in enumerate(byte_stream):
+    for byte in byte_stream:
         byte = ord(byte) # get integer representing code point
         bit_ordinality = 7 # 0 indexed
         #print(bin(byte))
         for i in range(8):
             #print("b4 ", bin(bit_streams[bit_ordinality]))
+            bit_streams[bit_ordinality] <<= 1
             bit = (byte >> i) & 1
             bit_streams[bit_ordinality] |= bit
-            if j != (len(byte_stream) - 1): # not fastest way to do this, but it is clearest
-                bit_streams[bit_ordinality] <<= 1
             #print("bit stream", bit_ordinality, bin(bit_streams[bit_ordinality]))
             bit_ordinality -= 1
     #print(bit_streams)

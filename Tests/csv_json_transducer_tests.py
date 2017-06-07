@@ -87,11 +87,18 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
 
     def test_main1(self):
         """Integration test for main() == system test."""
-        # TODO
+        # TODO  
 
     def test_main2(self):
-        """Integration test for main() == system test."""
-        # TODO
+        """Integration test for main() == system test
+
+        csv_input:              abcd,ff,12345,,
+        extracted_byte_stream:  abcdff12345
+        col_names = ["onesy", "two", "flap!", "er"]
+        boilerplate_byte: {\nonesy: ____,\ntwo: __,\nflap!: _____,\ner:\n}
+        output: {\nonesy: abcd,\ntwo: ff,\nflap!: 12345,\ner:\n}
+        """
+        self.assertFalse(1)
 
 
 if __name__ == '__main__':

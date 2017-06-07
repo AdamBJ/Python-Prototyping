@@ -164,21 +164,34 @@ def create_bpb_stream(target, field_widths, num_fields_per_unit, csv_column_name
 def apply_pext(bit_stream, pext_marker_stream, field_widths):
     extracted_bit_stream = 0
     shift_amnt = 0
-    print(bin(bit_stream))
-    print(bin(pext_marker_stream))
+    #print(bin(bit_stream))
+    #print(bin(pext_marker_stream))
     for fw in field_widths:
         leading_zeroes = pablo.count_leading_zeroes(pext_marker_stream)
-        bit_stream >>= leading_zeroes + fw
+        pext_marker_stream >>= leading_zeroes + fw
         field = (1 << fw) - 1
         field <<= leading_zeroes
-        field |= bit_stream  # field now contains extracted bit stream data
+        field &= bit_stream  # field now contains extracted bit stream data
 
         shift_amnt += fw
         extracted_bit_stream = (extracted_bit_stream << shift_amnt) | field
     return extracted_bit_stream
 
-# def apply_pdep(bp_bit_stream, pdep_marker_stream):
+def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits_stream, field_widths):
+    """
+    Example:
+        extracted_bits_stream = 101011
+        pdep_marker_stream = 000000001110000000011100000000
+        bp_bit_stream =       000000000000000000000000000000 -> final_bs = 000000001010000000001100000000
+    """
+    for fw in field_widths:
+        leading_zeroes = pablo.count_leading_zeroes(pdep_marker_stream)
+        field = ((1 << fw) - 1) & extracted_bits_stream
+        extracted_bits_stream >>= fw
+        bp_bit_streams[bp_stream_idx] |= (field << leading_zeroes)
 
+        # reset pdep_marker_stream bits belonging to the field we just processed
+        pdep_marker_stream = pdep_marker_stream & ~((1 << (leading_zeroes + fw)) - 1)
 
 def main(pack_size, csv_column_names, path_to_file):
     """Accept input a file path and pack_size, transduces file to target format.
@@ -199,43 +212,32 @@ def main(pack_size, csv_column_names, path_to_file):
         raise ValueError("Pack size must be a power of two.")
 
     csv_file_as_str = pablo.readfile(path_to_file)
-
-    pext_marker_stream = create_pext_ms(
-        TransductionTarget.JSON, csv_file_as_str)
-    #print("pext_marker_stream:", bin(pext_marker_stream))
+    pext_marker_stream = create_pext_ms(TransductionTarget.JSON, csv_file_as_str)
     idx_marker_stream = create_idx_ms(pext_marker_stream, pack_size)
-    #print("idx_marker_stream:", bin(idx_marker_stream))
-    field_width_marker_stream = create_field_width_ms(
-        pext_marker_stream, len(csv_file_as_str))
-    #print("field_width_marker_stream:", bin(field_width_marker_stream))
+    field_width_marker_stream = create_field_width_ms(pext_marker_stream, len(csv_file_as_str))
     field_widths = field_width.calculate_field_widths(pablo.BitStream(field_width_marker_stream),
-                                                      pablo.BitStream(
-                                                          idx_marker_stream),
+                                                      pablo.BitStream(idx_marker_stream),
                                                       pack_size)
-
-    pdep_marker_stream = create_pdep_stream(
-        field_widths, TransductionTarget.JSON, csv_column_names)
-    print("pdep_marker_stream:", bin(pdep_marker_stream))
-    #print("pdep_marker_stream hex", hex(pdep_marker_stream))
+    pdep_marker_stream = create_pdep_stream(field_widths, TransductionTarget.JSON, csv_column_names)
     json_bp_byte_stream = create_bpb_stream(
         TransductionTarget.JSON, field_widths, len(csv_column_names), csv_column_names)
-    #pablo.writefile('test.json', json_bp_byte_stream)
-
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
-    #frankenflap = pablo.inverse_transpose(json_bp_bit_streams,)
-
     for i in range(8):
-        extracted_bits_stream = apply_pext(
-            json_bp_bit_streams.bit_1, pext_marker_stream, field_widths)
-        # apply_pdep(ith json bp stream, pdep_marker_stream)
+        extracted_bits_stream = apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
+        apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream, field_widths)
 
-    # output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(csv_file_as_str) + number BP bytes added)
+    output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
     #pablo.writefile('out.json', output_byte_stream)
     # return output_byte_stream
 
+    print("output_byte_stream:\n", output_byte_stream)
+    print("pext_marker_stream:", bin(pext_marker_stream))
+    print("idx_marker_stream:", bin(idx_marker_stream))
+    print("field_width_marker_stream:", bin(field_width_marker_stream))
+    print("pdep_marker_stream:", bin(pdep_marker_stream))
 
 if __name__ == '__main__':
     main(64, ["col1"], "Resources/Test/s2p_test.csv")
