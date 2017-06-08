@@ -139,8 +139,8 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
     for i in range(8):
-        extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream, field_widths)
-        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream, field_widths)
+        extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
+        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream)
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
     #pablo.writefile('out.json', output_byte_stream)

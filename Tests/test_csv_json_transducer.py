@@ -63,7 +63,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(resassemble_test, "12,abc,flap")
 
         for i, stream in enumerate(csv_bit_streams):
-            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms, field_widths)
+            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms)
 
         extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
         self.assertEqual(extracted_byte_stream, "12abcflap")

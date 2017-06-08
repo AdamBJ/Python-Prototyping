@@ -57,8 +57,7 @@ class TestPabloMethods(unittest.TestCase):
         pext_ms = int('11101010111111110', 2)
         bit_stream = int('10101011101100011', 2)
         expected_source_bit_stream = int('1011110110001', 2)
-        field_widths = [3, 1, 1, 8]
-        actual_ebs = pablo.apply_pext(bit_stream, pext_ms, field_widths)
+        actual_ebs = pablo.apply_pext(bit_stream, pext_ms)
         #print(bin(actual_ebs))
         #print(bin(expected_source_bit_stream))
         self.assertEqual(expected_source_bit_stream, actual_ebs)
@@ -74,13 +73,12 @@ class TestPabloMethods(unittest.TestCase):
         csv_byte_stream = 'abcd,ff,12345'
         expected_extracted_byte_stream = 'abcdff12345'
         pext_ms = int('1111011011111', 2)
-        field_widths = [4, 2, 5]
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_byte_stream, csv_bit_streams)
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
 
         for i, stream in enumerate(csv_bit_streams):
-            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms, field_widths)
+            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms)
 
         actual_extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams,
                                                                len('abcdff12345'))
@@ -98,7 +96,7 @@ class TestPabloMethods(unittest.TestCase):
         pdep_ms = int('11110111001001', 2)
         sink_bit_stream = [0]
         expected_result = int('11100101001001', 2)
-        pablo.apply_pdep(sink_bit_stream, 0, pdep_ms, source_bit_stream, [4, 3, 1, 1])
+        pablo.apply_pdep(sink_bit_stream, 0, pdep_ms, source_bit_stream)
 
         self.assertTrue(sink_bit_stream, expected_result)
 
