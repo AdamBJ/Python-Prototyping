@@ -52,34 +52,55 @@ class TestPabloMethods(unittest.TestCase):
         """
         pext_ms:                11101010111111110
         bit_stream:             10101011101100011
-        extracted_bits_stream:  101 1 1 10110001
+        source_bit_stream:  101 1 1 10110001
         """
         pext_ms = int('11101010111111110', 2)
         bit_stream = int('10101011101100011', 2)
-        expected_extracted_bits_stream = int('1011110110001', 2)
+        expected_source_bit_stream = int('1011110110001', 2)
         field_widths = [3, 1, 1, 8]
         actual_ebs = pablo.apply_pext(bit_stream, pext_ms, field_widths)
         #print(bin(actual_ebs))
-        #print(bin(expected_extracted_bits_stream))
-        self.assertEqual(expected_extracted_bits_stream, actual_ebs)
+        #print(bin(expected_source_bit_stream))
+        self.assertEqual(expected_source_bit_stream, actual_ebs)
 
     def test_apply_pext_csv_json(self):
         """
+        Integration test for s2p, pext, p2s.
+
         csv_input:              abcd,ff,12345
         pext_ms:                1111011011111
         extracted_byte_stream:  abcdff12345
         """
-        #self.assertFalse(1)
+        csv_byte_stream = 'abcd,ff,12345'
+        expected_extracted_byte_stream = 'abcdff12345'
+        pext_ms = int('1111011011111', 2)
+        field_widths = [4, 2, 5]
+        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        pablo.serial_to_parallel(csv_byte_stream, csv_bit_streams)
+        extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+
+        for i, stream in enumerate(csv_bit_streams):
+            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms, field_widths)
+
+        actual_extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams,
+                                                               len('abcdff12345'))
+        self.assertEqual(expected_extracted_byte_stream, actual_extracted_byte_stream)
 
     def test_apply_pdep(self):
-        """
-        extracted_bits_stream: 111010111
+        """ Unit test for apply_pdep.
+
+        source_bit_stream: 111010111
         pdep_ms:            11110111001001
-        targer_bit_stream:  00000000000000
+        sink_bit_stream:  00000000000000
         result:             11100101001001
         """
-        #self.assertFalse(1)
+        source_bit_stream = int('111010111', 2)
+        pdep_ms = int('11110111001001', 2)
+        sink_bit_stream = [0]
+        expected_result = int('11100101001001', 2)
+        pablo.apply_pdep(sink_bit_stream, 0, pdep_ms, source_bit_stream, [4, 3, 1, 1])
 
+        self.assertTrue(sink_bit_stream, expected_result)
 
 if __name__ == '__main__':
     unittest.main()
