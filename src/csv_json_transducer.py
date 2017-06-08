@@ -148,10 +148,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     #print("idx_marker_stream:", bin(idx_marker_stream))
     print("input CSV file:", csv_file_as_str)
     print("CSV file column names:", csv_column_names)
-    while csv_file_as_str:
-        print("test!", csv_file_as_str)
-        csv_file_as_str >>= 1
-    #print("output_JSON_file:", output_byte_stream)
+    print("output_JSON_file:", output_byte_stream)
     #print("pdep_marker_stream:", bin(pdep_marker_stream))
     return output_byte_stream
 
