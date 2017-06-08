@@ -34,23 +34,24 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         """Simple CSV transduction test.
 
         100010001000 ->
-        00000000001110000000000111000000000011100
+        0000000000111000000001110000000011100
         """
         csv_column_names = ["col1", "col2", "col3"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, 1879277596)
+        self.assertEqual(pdep_marker_stream.value, int('111000000001110000000011100', 2))
 
     def test_simple2(self):
         """Simple CSV transduction test with empty fields, more complex idx, different pack_size.
 
         1000110001000001000 ->
-        ..........111....................111..........11111..........111..
+        0000000000111000000000000000011100000000111110000000011100
         """
         csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 0, 3, 5, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, 63050402300395548)
+        self.assertEqual(pdep_marker_stream.value,
+                         int('111000000000000000011100000000111110000000011100', 2))
 
     def test_unicode(self):
         """Non-ascii column names.
@@ -60,13 +61,12 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
 
         100010010000000 ->
         2 + 4 + 9=15     2 + 4 + 6=12     2 + 4 + 7 = 13
-        000000000000000111000000000000111000000000000011100
+        00000000000000011100000000001110000000000011100
         """
-        pack_size = 64
         csv_column_names = ["한국어", "中文", "English"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, 60131377180)
+        self.assertEqual(pdep_marker_stream.value, int('11100000000001110000000000011100', 2))
 
 if __name__ == '__main__':
     unittest.main()
