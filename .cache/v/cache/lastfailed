@@ -1,5 +1,0 @@
-{
-  "Tests/test_pdep_stream_gen.py::TestPDEPStreamGenMethods::test_simple": true,
-  "Tests/test_pdep_stream_gen.py::TestPDEPStreamGenMethods::test_simple2": true,
-  "Tests/test_pdep_stream_gen.py::TestPDEPStreamGenMethods::test_unicode": true
-}
