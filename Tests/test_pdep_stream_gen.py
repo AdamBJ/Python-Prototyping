@@ -34,7 +34,7 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         """Simple CSV transduction test.
 
         100010001000 ->
-        ..........111..........111..........111..
+        00000000001110000000000111000000000011100
         """
         csv_column_names = ["col1", "col2", "col3"]
 

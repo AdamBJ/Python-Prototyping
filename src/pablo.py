@@ -425,7 +425,7 @@ def apply_pext(bit_stream, pext_marker_stream, field_widths):
         extracted_bit_stream = (field << shift_amnt) | extracted_bit_stream
         shift_amnt += fw
     return extracted_bit_stream
-
+#TODO get rid of field_widths, change extracted_bits_stream to source_bits_stream
 def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, extracted_bits_stream,
                field_widths):
     """Apply quick-and-dirty Python version of pdep to bp_bit_streams[bp_stream_idx].
