@@ -52,9 +52,16 @@ class TestPabloMethods(unittest.TestCase):
         """
         pext_ms:                11101010111111110
         bit_stream:             10101011101100011
-        extracted_bits_stream:  1111011110
+        extracted_bits_stream:  101 1 1 10110001
         """
-        #self.assertFalse(1)
+        pext_ms = int('11101010111111110', 2)
+        bit_stream = int('10101011101100011', 2)
+        expected_extracted_bits_stream = int('1011110110001', 2)
+        field_widths = [3, 1, 1, 8]
+        actual_ebs = pablo.apply_pext(bit_stream, pext_ms, field_widths)
+        #print(bin(actual_ebs))
+        #print(bin(expected_extracted_bits_stream))
+        self.assertEqual(expected_extracted_bits_stream, actual_ebs)
 
     def test_apply_pext_csv_json(self):
         """
