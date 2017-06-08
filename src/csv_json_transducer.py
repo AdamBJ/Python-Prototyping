@@ -133,7 +133,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
                                                       pack_size)
     pdep_marker_stream = create_pdep_stream(field_widths, csv_column_names, target_format)
     json_bp_byte_stream = create_bpb_stream(
-        target_format, field_widths, len(csv_column_names), csv_column_names)
+        field_widths, len(csv_column_names), csv_column_names)
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
@@ -144,12 +144,13 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
     #pablo.writefile('out.json', output_byte_stream)
-    # return output_byte_stream
-
-    print("output_byte_stream:\n", output_byte_stream)
-    print("pext_marker_stream:", bin(pext_marker_stream))
-    print("idx_marker_stream:", bin(idx_marker_stream))
-    print("pdep_marker_stream:", bin(pdep_marker_stream))
+    #print("pext_marker_stream:", bin(pext_marker_stream))
+    #print("idx_marker_stream:", bin(idx_marker_stream))
+    print("input CSV file:", csv_file_as_str)
+    print("CSV file column names:", csv_column_names)
+    print("output_JSON_file:", output_byte_stream)
+    #print("pdep_marker_stream:", bin(pdep_marker_stream))
+    return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col1"], "Resources/Test/s2p_test.csv")
+    main(64, ["col A", "col B", "col C"], "Resources/Test/test.csv")

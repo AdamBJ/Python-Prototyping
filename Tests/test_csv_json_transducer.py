@@ -86,7 +86,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
                                                      ["col1", "col2", "col3"])
 
-        self.assertEqual(pdep_ms, int("1100000000001110000000000111100", 2))
+        self.assertEqual(pdep_ms, int("110000000011100000000111100", 2))
 
     def test_create_bp_bs(self):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
@@ -108,9 +108,16 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
 
     def test_main1(self):
         """Integration test for main() == system test."""
-        # TODO  
+        result = csv_json_transducer.main(64, ["col1"], "Resources/Test/s2p_test.csv")
+        self.assertEqual(result, '{\ncol1: 123\n}')
 
     def test_main2(self):
+        """Integration test for main() == system test."""
+        result = csv_json_transducer.main(64, ["col A", "col B", "col C"],
+            "Resources/Test/test.csv")
+        self.assertEqual(result, '{\ncol A: 12,\ncol B: abc,\ncol C: flap\n}')
+
+    def test_main3(self):
         """Integration test for main() == system test
 
         csv_input:              abcd,ff,12345,,

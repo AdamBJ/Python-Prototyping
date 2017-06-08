@@ -95,7 +95,7 @@ def transduce_field(field_wrapper, field_type, target, csv_column_names):
     if target == TransductionTarget.JSON:
         #TODO "Please enter column names / parse column names from file"
         # "colname": 
-        preceeding_boilerplate_bytes = 4 + len(csv_column_names[field_type].encode('utf-8'))
+        preceeding_boilerplate_bytes = 2 + len(csv_column_names[field_type].encode('utf-8'))
         #,\n  or \n} TODO quotes around value?
         following_boilerplate_bytes = 2
         if field_type == 0:
