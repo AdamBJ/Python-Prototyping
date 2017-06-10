@@ -1,5 +1,5 @@
 """
-Contains the "main" method that we call to transduce a field in one format
+Contains the "main" method that we call to transduce a field in one formatdsdddd
 to a field in another format. Currently the only transduction operation
 supported is CSV to JSON.
 """
@@ -24,7 +24,7 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
     Quick-and-dirty python implementation of a simplified character class compiler.
     Search for different characters depending on the target_format. Currently only
     JSON is supported.
-
+0
     JSON: Scan the input file bytestream for instances of non-delimiter characters
     (i.e. anything that's not ',').
 
@@ -41,7 +41,7 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
     if target_format == TransductionTarget.JSON:
         for character in input_file_contents:
             pext_marker_stream <<= 1
-            if character != ',':
+            if character != ',' and character != '\n':
                 pext_marker_stream |= 1
     else:
         raise ValueError("Only CSV to JSON transduction is supported.")
@@ -153,4 +153,4 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "col B", "col C"], "Resources/Test/test.csv")
+    main(64, ["col A", "col B", "col C"], "Resources/Test/test_multiline_small.csv")

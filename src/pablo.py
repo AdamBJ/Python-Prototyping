@@ -86,7 +86,7 @@ def atEOF(strm):
     else:
         return 0
 
-def count_leading_zeroes(strm):
+def count_leading_zeroes(strm): #TODO shouldn't this be count trailing zeroes?
     zeroes = 0
     while (strm & 0xFFFFFFFF) == 0:
         zeroes += 32
@@ -377,7 +377,6 @@ def create_idx_ms(marker_stream, pack_size):
     """
     idx_marker_stream = 0
     pack_mask = (1 << pack_size) - 1
-
     while marker_stream:
         non_empty_pack = any(pack_mask & marker_stream)
         marker_stream >>= pack_size
