@@ -48,7 +48,7 @@ def find_nonzero_pack(idx_marker_stream_wrapper):
     Find the position, reset the lowest bit of idx_marker_stream_wrapper.value.,
     and return the position.
     """
-    non_zero_pack_idx = pablo.count_leading_zeroes(idx_marker_stream_wrapper.value)
+    non_zero_pack_idx = pablo.count_forward_zeroes(idx_marker_stream_wrapper.value)
     idx_marker_stream_wrapper.value = pablo.reset_lowest_bit(idx_marker_stream_wrapper.value)
     return non_zero_pack_idx
 
@@ -95,7 +95,7 @@ def process_pack(field_width_stream_wrapper, field_widths, field_start, non_zero
     # Process the pack
     abs_pack_start_posn = non_zero_pack_idx * pack_size
     while pack_wrapper.value:
-        field_end = pablo.count_leading_zeroes(pack_wrapper.value) + abs_pack_start_posn
+        field_end = pablo.count_forward_zeroes(pack_wrapper.value) + abs_pack_start_posn
         field_widths.insert(0, field_end - field_start - 1)
         field_start = field_end
         pack_wrapper.value = pablo.reset_lowest_bit(pack_wrapper.value)

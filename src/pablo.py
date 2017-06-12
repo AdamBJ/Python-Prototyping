@@ -69,7 +69,7 @@ def transpose_streams(s, b):
     return cursor-1  # EOF mask
 
 def match(s,marker):
-    pos = count_leading_zeroes(marker)
+    pos = count_forward_zeroes(marker)
     i = 0
     for byte in s:
         if byte != data[pos+i]:
@@ -86,7 +86,13 @@ def atEOF(strm):
     else:
         return 0
 
-def count_leading_zeroes(strm): #TODO shouldn't this be count trailing zeroes?
+def count_forward_zeroes(strm):
+    """Count zeroes starting from position 0 bit in stream.
+
+    Parabix uses LSB numbering, (see https://en.wikipedia.org/wiki/Bit_numbering)
+    so for us the position 0 bit is the rightmost bit.
+    Another way to think of this oepration is to count zeroes in the direction carry bits move.
+    """
     zeroes = 0
     while (strm & 0xFFFFFFFF) == 0:
         zeroes += 32
@@ -391,7 +397,7 @@ def get_width_next_field(bit_stream):
         bit_stream = 1110111110000
         field_width = 5
     """
-    leading_zeroes = count_leading_zeroes(bit_stream)
+    leading_zeroes = count_forward_zeroes(bit_stream)
     bit_stream >>= leading_zeroes
     fw = count_leading_ones(bit_stream)
     return fw
@@ -416,7 +422,7 @@ def apply_pext(bit_stream, pext_marker_stream):
     #print(bin(bit_stream))
     #print(bin(pext_marker_stream))
     while pext_marker_stream:
-        leading_zeroes = count_leading_zeroes(pext_marker_stream)
+        leading_zeroes = count_forward_zeroes(pext_marker_stream)
         fw = get_width_next_field(pext_marker_stream)
         field = (1 << fw) - 1
         field <<= leading_zeroes
@@ -455,7 +461,7 @@ def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, source_bit_str
         bp_bit_stream[bp_stream_idx] = 000000001010000000001100000000
     """
     while pdep_marker_stream:
-        leading_zeroes = count_leading_zeroes(pdep_marker_stream)
+        leading_zeroes = count_forward_zeroes(pdep_marker_stream)
         fw = get_width_next_field(pdep_marker_stream)
         field = ((1 << fw) - 1)
         bp_bit_streams[bp_stream_idx] &= ~(field << leading_zeroes) # zero out deposit field
