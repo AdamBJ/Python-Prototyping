@@ -99,7 +99,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     print("idx_marker_stream:", bin(idx_marker_stream))
     print("field widths:", field_widths)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
-    print("output_JSON_file:", output_byte_stream)
+    print("output_JSON_file:", "\n" + output_byte_stream)
     return output_byte_stream
 
 if __name__ == '__main__':
