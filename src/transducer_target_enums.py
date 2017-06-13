@@ -46,12 +46,18 @@ class TransductionTarget(Enum):
             For a CSV input file with a single value that's three characters wide,
             return [\n    {\n        "columnName": ___\n        }\n].
         """
+        preceeding_boilerplate_bytes = 0
+        following_boilerplate_bytes = 0
+        ff_pbb = 0 
+        ff_fbb = 0
+        lf_pbb = 0
+        lf_fbb = 0
 
         if self == TransductionTarget.JSON:
             # TODO prompt for column names
             # num_fields_per_unit == number CSV values per row in CSV file
             if len(field_widths) % num_fields_per_unit != 0:
-                raise ValueError("Source fields cannot be cleanly packaged into JSON objects.")
+                raise ValueError("Provided source fields cannot be cleanly packaged into JSON objects.")
 
             field_type = 0
             num_json_objects_to_create = len(field_widths) / num_fields_per_unit
@@ -64,8 +70,8 @@ class TransductionTarget(Enum):
 
                 # Add key/value pair. Indent key value pairs within {} and objects within []
                 json_bp_byte_stream += "        "
-                json_bp_byte_stream += "\"" + csv_column_names[field_type] + "\""
-                json_bp_byte_stream += ": " + ("_" * fw)  # space for value
+                json_bp_byte_stream += "\"" + csv_column_names[field_type] + "\": "
+                json_bp_byte_stream += "_" * fw  # space for value
 
                 if field_type == (num_fields_per_unit - 1):
                     num_json_objs_created += 1

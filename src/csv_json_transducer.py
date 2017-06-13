@@ -18,7 +18,7 @@ from src.pdep_stream_gen import create_pdep_stream
 from src import field_width
 
 
-def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
+def create_pext_ms(input_file_contents, source_format=TransductionTarget.CSV):
     """Create pext marker stream from the file contents based on the target format.
 
     Quick-and-dirty python implementation of a simplified character class compiler.
@@ -42,13 +42,13 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
     """
     pext_marker_stream = 0
     shift_amnt = 0
-    if target_format == TransductionTarget.JSON:
+    if source_format == TransductionTarget.CSV:
         for character in input_file_contents:
             if character != ',' and character != '\n':
                 pext_marker_stream = (1 << shift_amnt) | pext_marker_stream
             shift_amnt += 1
     else:
-        raise ValueError("Only CSV to JSON transduction is supported.")
+        raise ValueError("Only CSV transduction is supported.")
 
     return pext_marker_stream
 
@@ -74,7 +74,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
         raise ValueError("Pack size must be a power of two.")
 
     csv_file_as_str = pablo.readfile(path_to_file)
-    pext_marker_stream = create_pext_ms(csv_file_as_str, target_format)
+    pext_marker_stream = create_pext_ms(csv_file_as_str, source_format)
     idx_marker_stream = pablo.create_idx_ms(pext_marker_stream, pack_size)
     field_widths = field_width.calculate_field_widths(pext_marker_stream,
                                                       idx_marker_stream,
