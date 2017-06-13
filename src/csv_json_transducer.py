@@ -52,62 +52,6 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
 
     return pext_marker_stream
 
-# TODO add this to pablo.py for others to use?
-
-# TODO remove csv_column_names
-def create_bpb_stream(field_widths, num_fields_per_unit, csv_column_names, target=TransductionTarget.JSON):
-    """Create boilerplate byte stream.
-
-    The boilerplate byte stream is a stream of boilerplate characters with
-    space added for values extracted from the input file (e.g. CSV values).
-    The input file values will be inserted into the stream later by PDEP operations.
-
-    Args:
-        num_fields_per_unit: The number of fields in a "unit" of output. For example,
-        output units for JSON are JSON objects that contain num_fields_per_unit fields.
-        For CSV files, num_fields_per_unit is just one, since a CSV unit is whatever's
-        between two delimiters.
-
-    Example:
-        For a CSV input file with a single value: [{\n"columnName": ___\n}]
-        Where __ is long enough to accommodate all the characters of the CSV field we
-        extract from the CSV file.
-    """
-    if target == TransductionTarget.JSON:
-        # TODO prompt for column names
-        # quick and dirty concatenation
-        #json_bp_byte_stream = "["
-        json_bp_byte_stream = ""
-        field_type = 0
-        for i, fw in enumerate(field_widths):
-            if field_type == 0:
-                # first field in JSON object
-                json_bp_byte_stream += "{\n"
-
-            json_bp_byte_stream += csv_column_names[field_type]
-            json_bp_byte_stream += ": "
-            json_bp_byte_stream += "_" * fw  # space for CSV value. >>= field_width?
-
-            if field_type == (num_fields_per_unit - 1):
-                # final field
-                json_bp_byte_stream += "\n}"
-                field_type = -1  # reset
-                # can probably do this check in Pbix by comparing produced/processed count
-                # if i == len(field_widths) - 1:
-                #json_bp_byte_stream += ","
-            else:
-                # first or middle field
-                json_bp_byte_stream += ",\n"
-
-            field_type += 1
-        #json_bp_byte_stream += "]"
-
-        return json_bp_byte_stream
-
-    else:
-        raise ValueError(
-            "Only CSV to JSON transduction is currently supported.")
-
 def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTarget.JSON,
          source_format=TransductionTarget.CSV):
     """Accept path to file in source_format and pack_size. Transduces file to target_format.
@@ -136,8 +80,9 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
                                                       idx_marker_stream,
                                                       pack_size)
     pdep_marker_stream = create_pdep_stream(field_widths, csv_column_names, target_format)
-    json_bp_byte_stream = create_bpb_stream(
-        field_widths, len(csv_column_names), csv_column_names)
+    json_bp_byte_stream = TransductionTarget.create_bpb_stream(TransductionTarget.JSON,
+                                                               field_widths, len(csv_column_names),
+                                                               csv_column_names)
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)

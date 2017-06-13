@@ -319,7 +319,7 @@ def serial_to_parallel(byte_stream, bit_streams):
 
 def inverse_transpose(bitset, len):
     """
-    
+
     Bytestream grows left to right, process bitset from right to left since
     they're bit streams.
     """

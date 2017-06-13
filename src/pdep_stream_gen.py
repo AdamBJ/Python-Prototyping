@@ -54,18 +54,17 @@ def create_pdep_stream(field_widths, csv_column_names, target_format = Transduct
     Examples:
         >>> create_pdep_stream([3, 3, 3], TransductionTarget.JSON,
                                  ["col1", "col2", "col3"])
-        1879277596
-
-        1879277596 when viewed as a bit stream is ..........111..........111..........111..
+                                 TODO
     """
     pdep_marker_stream = pablo.BitStream(0)
     field_type = 0
-    shift_amnt = 0
+    shift_amnt = 2 # [\n
     # process fields in the order they appear in the file, i.e. from left to right
     for field_width in field_widths:
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
-        num_boilerplate_bytes_added = transduce_field(field_wrapper, field_type, target_format,
-                                                      csv_column_names)
+        num_boilerplate_bytes_added = TransductionTarget.transduce_field(target_format,
+                                                                         field_wrapper, field_type,
+                                                                         csv_column_names)
         insert_field(field_wrapper, pdep_marker_stream, shift_amnt)
         shift_amnt += num_boilerplate_bytes_added + field_width
         field_type += 1
@@ -74,41 +73,6 @@ def create_pdep_stream(field_widths, csv_column_names, target_format = Transduct
         #print(bin(pdep_marker_stream.value)) debug
     #print(bin(pdep_marker_stream.value)) #debug
     return pdep_marker_stream.value
-
-# TODO check handles non-ASCII encodings (everything but UTF-16 should work)
-# TODO remove csv_column_names as argument. Only needed if target is CSV. Parse/prompt
-# user if required
-def transduce_field(field_wrapper, field_type, target, csv_column_names):
-    """ Pad extracted field with appropriate boilerplate.
-
-    Args:
-        field_wrapper (BitStream): The field to trasduce.
-        field_type: A scalar describing the type of the field.
-        csv_column_names: The names of the columns in the input CSV file.
-     Returns:
-         Number of boilerplate padding bytes added.
-     Example:
-        >>>transduce_field(111, 0, JSON, ["col1","col2"])
-        10
-        Note: original field transformed from 111 to (00000000)11100
-    """
-    preceeding_boilerplate_bytes = 0
-    following_boilerplate_bytes = 0
-    if target == TransductionTarget.JSON:
-        #TODO "Please enter column names / parse column names from file"
-        # "colname": 
-        preceeding_boilerplate_bytes = 2 + len(csv_column_names[field_type].encode('utf-8'))
-        #,\n  or \n} TODO quotes around value?
-        following_boilerplate_bytes = 2
-        if field_type == 0:
-            #{\n
-            preceeding_boilerplate_bytes += 2
-    elif target == TransductionTarget.CSV:
-        #TODO
-        pass
-
-    field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
-    return preceeding_boilerplate_bytes + following_boilerplate_bytes
 
 def insert_field(field_wrapper, pdep_marker_stream, shift_amount):
     """OR padded value into PDEP marker stream.

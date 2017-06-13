@@ -52,7 +52,6 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
         pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
-        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
 
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
