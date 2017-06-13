@@ -158,4 +158,4 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "col B", "col C"], "Resources/Test/test.csv")
+    main(64, ["col A", "col B", "col C"], "Resources/Test/test_multiline_small.csv")

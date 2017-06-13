@@ -29,21 +29,28 @@ class TestPabloMethods(unittest.TestCase):
         Expected output: [0, 0, 7, 7, 0, 0, 3, 5]
 
         Explanation:
-            123 = 00110001 00110010 00110011
+            123 = 00110001
+                  00110010
+                  00110011
 
-            pbs0 = first bit from each byte = 000
-            1 = 000
-            2 = 111
-            3 = 111
-            4 = 000
-            5 = 000
-            6 = 011
-            7 = 101
+            Parallel bit streams generated from decomposing:
+            Remember that least sig bit of each byte (i.e. right most bit) goes to
+            bit stream 0. Also remember that each of the bit streams grow from right to
+            left, so the first byte is represented by the rightmost bit of each PBS.
+
+            first bit from each byte =  0 = 000
+                                        1 = 000
+                                        2 = 111
+                                        3 = 111
+                                        4 = 000
+                                        5 = 000
+                                        6 = 110
+                                        7 = 101
         """
         csv_file_as_str = pablo.readfile("Resources/Test/s2p_test.csv")
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-        self.assertEqual(csv_bit_streams, [0, 0, 7, 7, 0, 0, 3, 5])
+        self.assertEqual(csv_bit_streams, [0, 0, 7, 7, 0, 0, 6, 5])
 
         reconstituted_bytes = pablo.inverse_transpose(csv_bit_streams, 3)
         self.assertEqual('123', reconstituted_bytes)
@@ -52,7 +59,7 @@ class TestPabloMethods(unittest.TestCase):
         """
         pext_ms:                11101010111111110
         bit_stream:             10101011101100011
-        source_bit_stream:  101 1 1 10110001
+        extracted_bits_stream:  101 1 1 10110001
         """
         pext_ms = int('11101010111111110', 2)
         bit_stream = int('10101011101100011', 2)
@@ -61,18 +68,16 @@ class TestPabloMethods(unittest.TestCase):
         #print(bin(actual_ebs))
         #print(bin(expected_source_bit_stream))
         self.assertEqual(expected_source_bit_stream, actual_ebs)
-
     def test_apply_pext_csv_json(self):
-        """
-        Integration test for s2p, pext, p2s.
+        """Integration test for s2p, pext, p2s.
 
         csv_input:              abcd,ff,12345
         pext_ms:                1111011011111
         extracted_byte_stream:  abcdff12345
         """
         csv_byte_stream = 'abcd,ff,12345'
+        pext_ms = int('1111101101111', 2) # bit stream, right to left
         expected_extracted_byte_stream = 'abcdff12345'
-        pext_ms = int('1111011011111', 2)
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_byte_stream, csv_bit_streams)
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -85,11 +90,11 @@ class TestPabloMethods(unittest.TestCase):
         self.assertEqual(expected_extracted_byte_stream, actual_extracted_byte_stream)
 
     def test_apply_pdep(self):
-        """ Unit test for apply_pdep.
+        """Unit test for apply_pdep.
 
-        source_bit_stream: 111010111
+        source_bit_stream:  11010111
         pdep_ms:            11110111001001
-        sink_bit_stream:  00000000000000
+        sink_bit_stream:    00000000000000
         result:             11100101001001
         """
         source_bit_stream = int('111010111', 2)

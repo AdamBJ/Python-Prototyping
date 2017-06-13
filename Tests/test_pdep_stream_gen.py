@@ -33,25 +33,26 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
     def test_simple(self):
         """Simple CSV transduction test.
 
-        100010001000 ->
-        0000000000111000000001110000000011100
+        [3, 3, 3], ["col1", "col2", "col3"] ->
+        00111000000 00111000000 0011100000000
         """
         csv_column_names = ["col1", "col2", "col3"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, int('111000000001110000000011100', 2))
+        self.assertEqual(pdep_marker_stream.value, int('111000000001110000000011100000000', 2))
 
     def test_simple2(self):
         """Simple CSV transduction test with empty fields, more complex idx, different pack_size.
 
-        1000110001000001000 ->
-        0000000000111000000000000000011100000000111110000000011100
+        [3, 0, 3, 5, 3], ["col1", "col2", "col3", "col4", "col5"] ->
+        00111000000 0011111000000 00111000000 00|000000 0011100000000
         """
         csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 0, 3, 5, 3], csv_column_names))
+        print(bin(pdep_marker_stream.value))
         self.assertEqual(pdep_marker_stream.value,
-                         int('111000000000000000011100000000111110000000011100', 2))
+                         int('00111000000001111100000000111000000000000000011100000000', 2))
 
     def test_unicode(self):
         """Non-ascii column names.
@@ -59,14 +60,16 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
         Using UTF8. Hard coded SON boilerplate byte size should remain the same, column name
         boilerplate bytes should expand.
 
-        100010010000000 ->
-        2 + 4 + 9=15     2 + 4 + 6=12     2 + 4 + 7 = 13
-        00000000000000011100000000001110000000000011100
+        [3, 3, 3], ["한국어", "中文", "English"] ->
+            2 + 7 = 9      2 + 6 = 8    2 + 2 + 9 = 13
+        00111000000000 0011100000000 001110000000000000
+        Read pdep stream this direction <---. Start of file is RHS, end is LHS.
         """
         csv_column_names = ["한국어", "中文", "English"]
 
         pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, int('11100000000001110000000000011100', 2))
+        self.assertEqual(pdep_marker_stream.value,
+                         int('1110000000000011100000000001110000000000000', 2))
 
 if __name__ == '__main__':
     unittest.main()

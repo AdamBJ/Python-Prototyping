@@ -36,6 +36,11 @@ def readfile(filename):
     return contents
 
 def transpose_streams(s, b):
+    """ Build parallel bit streams a single stream at a time.
+
+    The for loop builds an entire PBS, the while loop loops while
+    there are still PBS to build.
+    """
     mask = 128
     index = 0
     #global data
@@ -43,7 +48,7 @@ def transpose_streams(s, b):
         current = 0
         cursor = 1
         for byte in s:
-            if  (ord(byte) & mask != 0):
+            if ord(byte) & mask != 0:
                 current += cursor
             cursor <<= 1
 
@@ -314,6 +319,9 @@ def serial_to_parallel(byte_stream, bit_streams):
 
 def inverse_transpose(bitset, len):
     """
+    
+    Bytestream grows left to right, process bitset from right to left since
+    they're bit streams.
     """
     bytestream = ""
     cursor = 1

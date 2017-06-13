@@ -36,7 +36,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = csv_json_transducer.create_pext_ms(
             csv_file_as_str)
-        self.assertEqual(pext_ms, int("11011101111", 2))
+        self.assertEqual(pext_ms, int("11110111011", 2))
 
     def test_create_extracted_bit_streams(self):
         """Integration test for pext_ms creation, pext application, s2p, p2s operations.
@@ -53,9 +53,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
         pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
         idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pext_ms,
-                                                          idx_ms,
-                                                          pack_size)
+
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
@@ -74,7 +72,11 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(idx_ms, 1)
 
     def test_first_half(self):
-        """Integration test verifying the first half of the transducer."""
+        """Integration test verifying the first half of the transducer.
+
+            Input: 12,abc,flap
+            pdep_ms: 001111000000 00111000000 001100000000
+        """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = csv_json_transducer.create_pext_ms(
@@ -86,7 +88,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
                                                      ["col1", "col2", "col3"])
 
-        self.assertEqual(pdep_ms, int("110000000011100000000111100", 2))
+        self.assertEqual(pdep_ms, int("00111100000000111000000001100000000", 2))
 
     def test_create_bp_bs(self):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""

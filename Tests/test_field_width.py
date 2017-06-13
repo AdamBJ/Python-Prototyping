@@ -38,7 +38,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = 1
         pack_size = 64
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [5, 0, 3])
+                         (field_width_stream, idx_marker_stream, pack_size), [3, 0, 5])
 
     def test_multpack(self):
         """Test with multi-pack field_width_stream and non-standard pack_size."""
@@ -46,7 +46,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = int('101', 2)
         pack_size = 8
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [12, 0, 3])
+                         (field_width_stream, idx_marker_stream, pack_size), [3, 0, 12])
     def test_multpack2(self):
         """Test with multi-pack field_width_stream and standard pack_size."""
         field_width_stream = int('11010000111110101110110111111111000011001110111111101110111011101110', 2)
@@ -54,8 +54,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         pack_size = 64
         self.assertEqual(field_width.calculate_field_widths
                          (field_width_stream, idx_marker_stream, pack_size),
-                         [2, 1, 0, 0, 0, 5, 1, 3, 2, 9, 0, 0, 0,
-                          2, 0, 3, 7, 3, 3, 3, 3, 0])
+                         [0, 3, 3, 3, 3, 7, 3, 0, 2, 0, 0, 0, 9, 2, 3, 1, 5, 0, 0, 0, 1, 2])
 
     def test_multpack3(self):
         """Test with many-pack field_width_stream and non-standard pack_size."""
@@ -64,7 +63,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         pack_size = 4
         self.assertEqual(field_width.calculate_field_widths
                          (field_width_stream, idx_marker_stream, pack_size),
-                         [1, 5, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 8, 0, 1, 0, 1, 1])
+                         [1, 1, 0, 1, 0, 8, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 5, 1])
 
 
     def test_multpack4(self):
@@ -73,7 +72,7 @@ class TestFieldWidthMethods(unittest.TestCase):
         idx_marker_stream = int('111', 2)
         pack_size = 8
         self.assertEqual(field_width.calculate_field_widths
-                         (field_width_stream, idx_marker_stream, pack_size), [6, 0, 6, 0, 6, 0])
+                         (field_width_stream, idx_marker_stream, pack_size), [0, 6, 0, 6, 0, 6])
 
 if __name__ == '__main__':
     unittest.main()
