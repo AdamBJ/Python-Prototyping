@@ -24,7 +24,7 @@ from src import pablo
 from src.field_width import calculate_field_widths
 
 #TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
-def create_pdep_stream(field_widths, csv_column_names, target_format = TransductionTarget.JSON):
+def create_pdep_stream(field_widths, converter):
     """Generate a bit mask stream for use with the PDEP operation.
 
     Takes as input a list containing field widths and a target format and produces a PDEP
@@ -45,8 +45,8 @@ def create_pdep_stream(field_widths, csv_column_names, target_format = Transduct
 
     Args:
         field_widths: The widths of the fields contained in the input file.
-        target_format: E.g. JSON, CSV, ...
-        csv_column_names: Names of the columns in the input CSV file (if target_format == JSON)
+        converter: Object containing attributes and methods used to convert fields
+            to a particular format.
 
     Returns (BitStream):
         The pdep bit stream.
@@ -58,17 +58,17 @@ def create_pdep_stream(field_widths, csv_column_names, target_format = Transduct
     """
     pdep_marker_stream = pablo.BitStream(0)
     field_type = 0
-    shift_amnt = 2 # [\n
+    shift_amnt = 0
     # process fields in the order they appear in the file, i.e. from left to right
-    for field_width in field_widths:
+    for i, field_width in enumerate(field_widths):
+        is_first_or_final_field = True if i == 0 or i == (len(field_widths) - 1) else False
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
-        num_boilerplate_bytes_added = TransductionTarget.transduce_field(target_format,
-                                                                         field_wrapper, field_type,
-                                                                         csv_column_names)
+        num_boilerplate_bytes_added = converter.transduce_field(field_wrapper, field_type,
+                                                                is_first_or_final_field)
         insert_field(field_wrapper, pdep_marker_stream, shift_amnt)
         shift_amnt += num_boilerplate_bytes_added + field_width
         field_type += 1
-        if field_type == len(csv_column_names):
+        if field_type == converter.num_fields_per_unit:
             field_type = 0
         #print(bin(pdep_marker_stream.value)) debug
     #print(bin(pdep_marker_stream.value)) #debug

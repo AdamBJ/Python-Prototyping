@@ -16,6 +16,7 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.pdep_stream_gen import create_pdep_stream
 from src import field_width
+from src.json_converter import JSONConverter
 
 
 def create_pext_ms(input_file_contents, source_format=TransductionTarget.CSV):
@@ -79,10 +80,15 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
     field_widths = field_width.calculate_field_widths(pext_marker_stream,
                                                       idx_marker_stream,
                                                       pack_size)
-    pdep_marker_stream = create_pdep_stream(field_widths, csv_column_names, target_format)
-    json_bp_byte_stream = TransductionTarget.create_bpb_stream(TransductionTarget.JSON,
-                                                               field_widths, len(csv_column_names),
-                                                               csv_column_names)
+    converter = None
+    if target_format == TransductionTarget.JSON:
+        # TODO prompt for column names here
+        converter = JSONConverter(field_widths, csv_column_names)
+    else:
+        raise ValueError("Unsupported target transduction format specified:", target_format)
+
+    pdep_marker_stream = create_pdep_stream(field_widths, converter)
+    json_bp_byte_stream = converter.json_bp_byte_stream
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
