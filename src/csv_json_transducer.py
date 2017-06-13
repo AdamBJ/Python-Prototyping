@@ -23,8 +23,10 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
 
     Quick-and-dirty python implementation of a simplified character class compiler.
     Search for different characters depending on the target_format. Currently only
-    JSON is supported.
-0
+    JSON is supported. Remember that bit streams grow from right to left, starting from
+    bit position 0. See
+    https://github.com/AdamBJ/Python-Prototyping/wiki/Bit-stream-growth-and-processing-order
+
     JSON: Scan the input file bytestream for instances of non-delimiter characters
     (i.e. anything that's not ',').
 
@@ -36,13 +38,15 @@ def create_pext_ms(input_file_contents, target_format=TransductionTarget.JSON):
         we want the PEXT operation to extract.
     Example:
         Input file is abc,123,def and target == JSON, pext_marker_stream would be 11101110111.
+        abc,1234 -> 11110111
     """
     pext_marker_stream = 0
+    shift_amnt = 0
     if target_format == TransductionTarget.JSON:
         for character in input_file_contents:
-            pext_marker_stream <<= 1
             if character != ',' and character != '\n':
-                pext_marker_stream |= 1
+                pext_marker_stream = (1 << shift_amnt) | pext_marker_stream
+            shift_amnt += 1
     else:
         raise ValueError("Only CSV to JSON transduction is supported.")
 
@@ -144,13 +148,14 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
     #pablo.writefile('out.json', output_byte_stream)
-    #print("pext_marker_stream:", bin(pext_marker_stream))
-    #print("idx_marker_stream:", bin(idx_marker_stream))
     print("input CSV file:", csv_file_as_str)
     print("CSV file column names:", csv_column_names)
+    print("pext_marker_stream:", bin(pext_marker_stream))
+    print("idx_marker_stream:", bin(idx_marker_stream))
+    print("field widths:", field_widths)
+    print("pdep_marker_stream:", bin(pdep_marker_stream))
     print("output_JSON_file:", output_byte_stream)
-    #print("pdep_marker_stream:", bin(pdep_marker_stream))
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "col B", "col C"], "Resources/Test/test_multiline_small.csv")
+    main(64, ["col A", "col B", "col C"], "Resources/Test/test.csv")

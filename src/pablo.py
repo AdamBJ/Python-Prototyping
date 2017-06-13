@@ -297,49 +297,25 @@ def get_popcount(bits):
 
 def serial_to_parallel(byte_stream, bit_streams):
     """
-    We read a file from left to right. By analogy with how a number is laid out
-    on paper, we read a file from "most significant position" to "least sig posn".
-    The pablo functions are designed to start processing from the least sig position
-    to the most sig position (right to left), though. This mismatch hurts my brain.
-
-    We read the parallel bit streams from left to right, just like a file (since PBS
-    are just a transposed view of the original file byte stream). We *build* PBS from
-    right to left, though. That requires some minor logical acrobatics. We read the first
-    byte from the input byte stream, decompose it and add into PBS, then shift each PBS left by
-    one bit position before repeating the process with the next byte. Older bits appear farther
-    left in the PBS. The net effect of this approach is that the final byte of the file appears
-    as the final bit of the PBS.
-
-    To makes things ever more ridiculous, we process each *byte* from right to left. Like this:
-    11110101 & 1 = bit position 7.
-    11110101 >> 1 = 01111010
-    01111010 & 1 = bit position 6.
-    ...
     """
+    byte_count = 0
     for byte in byte_stream:
         byte = ord(byte) # get integer representing code point
         bit_ordinality = 7 # 0 indexed
         #print(bin(byte))
         for i in range(8):
             #print("b4 ", bin(bit_streams[bit_ordinality]))
-            bit_streams[bit_ordinality] <<= 1
             bit = (byte >> i) & 1
-            bit_streams[bit_ordinality] |= bit
+            bit_streams[bit_ordinality] = bit_streams[bit_ordinality] | (bit << byte_count)
             #print("bit stream", bit_ordinality, bin(bit_streams[bit_ordinality]))
             bit_ordinality -= 1
+        byte_count += 1
     #print(bit_streams)
 
 def inverse_transpose(bitset, len):
     """
-
-    We read PBS like file, from left to right. Leftmost bit corresponds to
-    first byte in file. However, PBS are integers and the easiest way to extract each
-    bit is to AND each stream with 1 (i.e. at the least significant bit position).
-    We use this "and with 1" approach, so we process
-    the PBSs "backwards" (i.e. from the last byte in the file to the first). That's why
-    we do bytestream = chr(byteval) + bytestream instead of bytestream += chr(byteval).
     """
-    bytestream=""
+    bytestream = ""
     cursor = 1
     for i in range(0, len):
         byteval = 0
@@ -347,7 +323,7 @@ def inverse_transpose(bitset, len):
             if bitset[j] & cursor != 0:
                 # 0th pbs contains most sig bit
                 byteval += 128 >> j # 128 = 10000000
-        bytestream = chr(byteval) + bytestream
+        bytestream += chr(byteval)
         cursor += cursor # *2, equiv to << 1
     return bytestream
 
@@ -370,10 +346,12 @@ def create_idx_ms(marker_stream, pack_size):
     Quick-and-dirty python implementation of idxMarkerStream Parabix kernel.
     Whereas the Parabix kernel using simd operations to generate the idx
     stream quickly, this function simply does a sequential scan of the input
-    stream to identify packs of interest.
+    stream to identify packs of interest. Remember bit streams like idx_marker_stream.
+    See https://github.com/AdamBJ/Python-Prototyping/wiki/Bit-stream-growth-and-processing-orde.
 
     Args:
-        marker_stream (int): The stream to scan through.
+        marker_stream (int): The stream to scan through. It's a bit stream, so process it
+            from left to right (starting at pos 0, the least sig position).
         pack_size (int): The final index stream is marker_stream length / pack_size
             bits long. Each bit of the index stream represents a pack_size "pack"
             of input stream bits. If the index stream bit is set, that means the
@@ -383,11 +361,12 @@ def create_idx_ms(marker_stream, pack_size):
     """
     idx_marker_stream = 0
     pack_mask = (1 << pack_size) - 1
+    shift_amnt = 0
     while marker_stream:
         non_empty_pack = any(pack_mask & marker_stream)
+        idx_marker_stream = idx_marker_stream | (non_empty_pack << shift_amnt)
+        shift_amnt += 1
         marker_stream >>= pack_size
-        idx_marker_stream <<= 1
-        idx_marker_stream = idx_marker_stream | non_empty_pack
 
     return idx_marker_stream
 
@@ -404,6 +383,7 @@ def get_width_next_field(bit_stream):
 
 def apply_pext(bit_stream, pext_marker_stream):
     """Apply quick-and-dirty python version of PEXT to bit_stream.
+
     Args:
         bit_stream: The bit stream we'll extract bits from.
         pext_marker_stream: The marker stream that tells us which bit positions in bit_stream

@@ -60,12 +60,14 @@ def create_pdep_stream(field_widths, csv_column_names, target_format = Transduct
     """
     pdep_marker_stream = pablo.BitStream(0)
     field_type = 0
+    shift_amnt = 0
     # process fields in the order they appear in the file, i.e. from left to right
     for field_width in field_widths:
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
         num_boilerplate_bytes_added = transduce_field(field_wrapper, field_type, target_format,
                                                       csv_column_names)
-        insert_field(field_wrapper, pdep_marker_stream, num_boilerplate_bytes_added + field_width)
+        insert_field(field_wrapper, pdep_marker_stream, shift_amnt)
+        shift_amnt += num_boilerplate_bytes_added + field_width
         field_type += 1
         if field_type == len(csv_column_names):
             field_type = 0
@@ -105,17 +107,16 @@ def transduce_field(field_wrapper, field_type, target, csv_column_names):
         #TODO
         pass
 
-    field_wrapper.value = field_wrapper.value << following_boilerplate_bytes
+    field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
     return preceeding_boilerplate_bytes + following_boilerplate_bytes
 
 def insert_field(field_wrapper, pdep_marker_stream, shift_amount):
-    """OR padded value into PDEP marker stream. 
-    
+    """OR padded value into PDEP marker stream.
+
     Stream grows from right to left. First field we process (which is the first
-    field that appear in the input file) is the left-most field represented by 
+    field that appear in the input file) is the left-most field represented by
     pdep_marker_stream. Last field we process (last field in the file) is the
     rightmost.
     """
-    pdep_marker_stream.value = (pdep_marker_stream.value << shift_amount) \
-                               | field_wrapper.value
-
+    pdep_marker_stream.value = (field_wrapper.value << shift_amount) \
+                               | pdep_marker_stream.value
