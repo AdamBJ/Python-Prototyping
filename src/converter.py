@@ -1,15 +1,4 @@
-
-""" Contains functions used for pdep marker stream geneartion.
-
-create_pdep_stream:
-Main driver function, produces a pdep stream.
-
-transduce_field: Given a field (string of 1 bits) and field type,
-pads field with boilerplate bits as appropriate and returns number
-of boilerplate bits added.
-
-insert field: insert transduced field into pdep stream
-"""
+""" Contains the abstract Converter class."""
 import sys
 import os
 from abc import ABC, abstractmethod, abstractproperty
@@ -24,15 +13,24 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src.field_width import calculate_field_widths
+
 class Converter(ABC):
-    #TODO encoding? Supports ASCII and UTF8, not UTF16 (currently 1 byte per JSON BP char)
-    @property
+    """Base class that is subclassed to support a particular output format (e.g. JSON).
+
+    This class defines the member variables and methods used to transduce a set of fields
+    to a particular format. Concrete subclasses implement the required abstract methods
+    and populate the required abstract properties in order to support transduction to
+    a particular format.
+    """
+    @abstractproperty
     def field_widths(self):
+        """Adds abstract member variable "field_widths" that concrete subclasses must define."""
         pass
-    @property
+    @abstractproperty
     def num_fields_per_unit(self):
+        """Adds abstract member variable "num_fields_per_unit" that concrete subclasses must define."""
         pass
-    
+
     def create_pdep_stream(self):
         """Generate a bit mask stream for use with the PDEP operation.
 

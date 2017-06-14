@@ -13,6 +13,15 @@ the second field) as well as the length of the column names in the CSV file
 is available at runtime, we can dynamically determine how much padding an
 extracted field requires.
 """
+import sys
+import os
+
+# workaround to get the import statements below working properly.
+# see https://stackoverflow.com/questions/16981921/relative-imports-in-python-3
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
+                                                           os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src.transducer_target_enums import TransductionTarget
 from src.converter import Converter
@@ -21,10 +30,19 @@ class JSONConverter(Converter):
     """Contains data and methods used to convert a set of extracted fields to JSON format.
     """
     def __init__(self, field_widths, json_object_field_names):
-        self.json_object_field_names = json_object_field_names
-        self.num_fields_per_unit = len(self.json_object_field_names)
-        self.field_widths = field_widths
+        self._json_object_field_names = json_object_field_names
+        self._num_fields_per_unit = len(json_object_field_names)
+        self._field_widths = field_widths
         #TODO determine num BP bytes, maintain here and use across create_ and transduce_
+
+    # Boilerplate for abstract attribute implementation. Add setters if need to set later.
+    @property
+    def num_fields_per_unit(self):
+        return self._num_fields_per_unit
+
+    @property
+    def field_widths(self):
+        return self._field_widths
 
     def create_bpb_stream(self):
         """Create boilerplate byte stream.
@@ -67,7 +85,7 @@ class JSONConverter(Converter):
 
             # Add key/value pair. Indent key value pairs within {} and objects within []
             json_bp_byte_stream += "        "
-            json_bp_byte_stream += "\"" + self.json_object_field_names[field_type] + "\": "
+            json_bp_byte_stream += "\"" + self._json_object_field_names[field_type] + "\": "
             json_bp_byte_stream += "_" * fw  # space for value
 
             if field_type == (self.num_fields_per_unit - 1):
@@ -120,10 +138,15 @@ class JSONConverter(Converter):
             Together: `    {\n        "col1": ___,\n
 
         """
+        preceeding_boilerplate_bytes, following_boilerplate_bytes = self.get_preceeding_following_bpb(field_type, is_first_or_final_field)
+        field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
+        return preceeding_boilerplate_bytes + following_boilerplate_bytes
+
+    def get_preceeding_following_bpb(self, field_type, is_first_or_final_field):
         preceeding_boilerplate_bytes = 0
         following_boilerplate_bytes = 0
         #           "<col_name>": 
-        preceeding_boilerplate_bytes = 12 + len(self.json_object_field_names[field_type].encode('utf-8'))
+        preceeding_boilerplate_bytes = 12 + len(self._json_object_field_names[field_type].encode('utf-8'))
         #,\n  or \n} or \n] TODO quotes around value?
         following_boilerplate_bytes = 2
         if field_type == 0:
@@ -131,8 +154,7 @@ class JSONConverter(Converter):
                 # [\n
                 preceeding_boilerplate_bytes += 2
             preceeding_boilerplate_bytes += 6 #    {\n
-        elif field_type == len(self.json_object_field_names) - 1:
-            following_boilerplate_bytes += 6 #    \n}
+        elif field_type == self._num_fields_per_unit - 1:
+            following_boilerplate_bytes += 6  #    \n}
 
-        field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
-        return preceeding_boilerplate_bytes + following_boilerplate_bytes
+        return (preceeding_boilerplate_bytes, following_boilerplate_bytes)

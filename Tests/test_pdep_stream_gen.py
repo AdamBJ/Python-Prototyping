@@ -14,7 +14,8 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src.transducer_target_enums import TransductionTarget
 from src import pablo
-from src.pdep_stream_gen import create_pdep_stream
+from src.json_converter import JSONConverter
+from Tests import helper_functions
 
 class TestPDEPStreamGenMethods(unittest.TestCase):
     """Test the functions in pdep_stream_gen_unit_tests.py with PyUnit.
@@ -26,33 +27,42 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
     def test_empty_file(self):
         """Test with empty CSV file."""
         csv_column_names = ["col1", "col2", "col3"]
+        field_widths = []
+        converter = JSONConverter(field_widths, csv_column_names)
+        actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter, field_widths, csv_column_names)
 
-        pdep_marker_stream = pablo.BitStream(create_pdep_stream([], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, 0)
+        self.assertEqual(actual_pdep_marker_stream.value, 0)
 
     def test_simple(self):
         """Simple CSV transduction test.
 
         [3, 3, 3], ["col1", "col2", "col3"] ->
-        00111000000 00111000000 0011100000000
+        00000000111000000000000000000111000000000000000000111000000000000000000000000
         """
         csv_column_names = ["col1", "col2", "col3"]
+        field_widths = [3, 3, 3]
+        converter = JSONConverter(field_widths, csv_column_names)
+        actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter, field_widths, csv_column_names)
+        #expected_pdep_ms = helper_functions.create_expected_pdep_ms(converter, field_widths, csv_column_names)
+        expected_pdep_ms = '00000000111000000000000000000111000000000000000000111000000000000000000000000'
 
-        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value, int('111000000001110000000011100000000', 2))
+        self.assertEqual(actual_pdep_marker_stream.value, int(expected_pdep_ms, 2))
 
     def test_simple2(self):
         """Simple CSV transduction test with empty fields, more complex idx, different pack_size.
 
         [3, 0, 3, 5, 3], ["col1", "col2", "col3", "col4", "col5"] ->
-        00111000000 0011111000000 00111000000 00|000000 0011100000000
+        0000000011100000000000000000011111000000000000000000111000000000000000000000000000000000000 /
+        111000000000000000000000000        
         """
         csv_column_names = ["col1", "col2", "col3", "col4", "col5"]
-
-        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 0, 3, 5, 3], csv_column_names))
-        print(bin(pdep_marker_stream.value))
-        self.assertEqual(pdep_marker_stream.value,
-                         int('00111000000001111100000000111000000000000000011100000000', 2))
+        field_widths = [3, 0, 3, 5, 3]
+        converter = JSONConverter(field_widths, csv_column_names)
+        actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter, field_widths, csv_column_names)
+        #expected_pdep_ms = helper_functions.create_expected_pdep_ms(converter, field_widths, csv_column_names)
+        expected_pdep_ms = '0000000011100000000000000000011111000000000000000000111000000000000000000000000000000000000' \
+                           '111000000000000000000000000'
+        self.assertEqual(actual_pdep_marker_stream.value, int(expected_pdep_ms, 2))
 
     def test_unicode(self):
         """Non-ascii column names.
@@ -62,14 +72,17 @@ class TestPDEPStreamGenMethods(unittest.TestCase):
 
         [3, 3, 3], ["한국어", "中文", "English"] ->
             2 + 7 = 9      2 + 6 = 8    2 + 2 + 9 = 13
-        00111000000000 0011100000000 001110000000000000
+        000000001110000000000000000000001110000000000000000000011100000000000000000000000000000
         Read pdep stream this direction <---. Start of file is RHS, end is LHS.
         """
         csv_column_names = ["한국어", "中文", "English"]
+        field_widths = [3, 3, 3]
+        converter = JSONConverter(field_widths, csv_column_names)
+        actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter, field_widths, csv_column_names)
+        #expected_pdep_ms = helper_functions.create_expected_pdep_ms(converter, field_widths, csv_column_names)
+        expected_pdep_ms = '000000001110000000000000000000001110000000000000000000011100000000000000000000000000000'
 
-        pdep_marker_stream = pablo.BitStream(create_pdep_stream([3, 3, 3], csv_column_names))
-        self.assertEqual(pdep_marker_stream.value,
-                         int('1110000000000011100000000001110000000000000', 2))
+        self.assertEqual(actual_pdep_marker_stream.value, int(expected_pdep_ms, 2))
 
 if __name__ == '__main__':
     unittest.main()

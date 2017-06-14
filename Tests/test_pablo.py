@@ -38,19 +38,19 @@ class TestPabloMethods(unittest.TestCase):
             bit stream 0. Also remember that each of the bit streams grow from right to
             left, so the first byte is represented by the rightmost bit of each PBS.
 
-            first bit from each byte =  0 = 000
-                                        1 = 000
-                                        2 = 111
-                                        3 = 111
-                                        4 = 000
-                                        5 = 000
-                                        6 = 110
-                                        7 = 101
+            first bit from each byte =  7 = 000
+                                        6 = 000
+                                        5 = 111
+                                        4 = 111
+                                        3 = 000
+                                        2 = 000
+                                        1 = 110
+                                        0 = 101
         """
         csv_file_as_str = pablo.readfile("Resources/Test/s2p_test.csv")
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-        self.assertEqual(csv_bit_streams, [0, 0, 7, 7, 0, 0, 6, 5])
+        self.assertEqual(csv_bit_streams, [5, 6, 0, 0, 7, 7, 0, 0])
 
         reconstituted_bytes = pablo.inverse_transpose(csv_bit_streams, 3)
         self.assertEqual('123', reconstituted_bytes)

@@ -16,7 +16,8 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src import csv_json_transducer
 from src import field_width
-from src import pdep_stream_gen
+from src.json_converter import JSONConverter
+from Tests import helper_functions
 
 # TODO More *realistic* tests. Visually inspect output JSON, save as "verified" output. Test
 # program's output against. Umple did this type of test.
@@ -49,7 +50,6 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             CSV file: abc,123
             Result: abc123
         """
-        pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
         pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
 
@@ -74,7 +74,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Integration test verifying the first half of the transducer.
 
             Input: 12,abc,flap
-            pdep_ms: 001111000000 00111000000 001100000000
+            expected_pdep_ms: 00000000111100000000000000000011100000000000000000011000000000000000000000000
         """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
@@ -84,10 +84,15 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         field_widths = field_width.calculate_field_widths(pext_ms,
                                                           idx_ms,
                                                           pack_size)
-        pdep_ms = pdep_stream_gen.create_pdep_stream(field_widths,
-                                                     ["col1", "col2", "col3"])
+        csv_column_names = ["col1", "col2", "col3"]
+        converter = JSONConverter(field_widths, csv_column_names)
+        actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter,
+                                                                                      field_widths,
+                                                                                      csv_column_names)
+        #expected_pdep_ms = helper_functions.create_expected_pdep_ms(converter, field_widths, csv_column_names)
+        expected_pdep_ms = '00000000111100000000000000000011100000000000000000011000000000000000000000000'
 
-        self.assertEqual(pdep_ms, int("00111100000000111000000001100000000", 2))
+        self.assertEqual(actual_pdep_marker_stream.value, int(expected_pdep_ms, 2))
 
     def test_create_bp_bs(self):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
@@ -99,9 +104,10 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         idx_marker_stream = pablo.create_idx_ms(
             pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pext_ms, idx_marker_stream, pack_size)
-        json_bp_byte_stream = csv_json_transducer.create_bpb_stream(
-            field_widths, len(csv_column_names), csv_column_names)
-        self.assertEqual('{\ncol1: ___\n}', json_bp_byte_stream)
+        converter = JSONConverter(field_widths, csv_column_names)
+
+        json_bp_byte_stream = converter.create_bpb_stream()
+        self.assertEqual('[\n    {\n        "col1": ___\n    }\n]', json_bp_byte_stream)
 
     def test_second_half(self):
         """Integration test verifying the second half of the transducer."""
@@ -110,13 +116,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
     def test_main1(self):
         """Integration test for main() == system test."""
         result = csv_json_transducer.main(64, ["col1"], "Resources/Test/s2p_test.csv")
-        self.assertEqual(result, '{\ncol1: 123\n}')
+        self.assertEqual(result, '[\n    {\n        "col1": 123\n    }\n]')
 
     def test_main2(self):
         """Integration test for main() == system test."""
         result = csv_json_transducer.main(64, ["col A", "col B", "col C"],
-            "Resources/Test/test.csv")
-        self.assertEqual(result, '{\ncol A: 12,\ncol B: abc,\ncol C: flap\n}')
+                                          "Resources/Test/test.csv")
+        self.assertEqual(result,
+                         '[\n    {\n        "col A": 12,\n        "col B": abc,\n        "col C": flap\n    }\n]')
 
     def test_main3(self):
         """Integration test for main() == system test
