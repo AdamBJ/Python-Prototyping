@@ -301,36 +301,55 @@ def get_popcount(bits):
     return count
 
 def serial_to_parallel(byte_stream, bit_streams):
-    """
+    """Decompose each byte into 8 bits. Store each bit in the appropriate bit stream.
+
+    Follow little-endian bit position numbering scheme. Least significant bit of each byte is bit 0,
+    most significant bit is bit 7.
     """
     byte_count = 0
     for byte in byte_stream:
-        byte = ord(byte) # get integer representing code point
-        bit_ordinality = 7 # 0 indexed
+        byte = ord(byte) # get integer representing code point of the byte
         #print(bin(byte))
         for i in range(8):
-            #print("b4 ", bin(bit_streams[bit_ordinality]))
+            #print("b4 ", bin(bit_streams[i]))
             bit = (byte >> i) & 1
-            bit_streams[bit_ordinality] = bit_streams[bit_ordinality] | (bit << byte_count)
-            #print("bit stream", bit_ordinality, bin(bit_streams[bit_ordinality]))
-            bit_ordinality -= 1
+            bit_streams[i] = bit_streams[i] | (bit << byte_count)
+            #print("bit stream", i, bin(bit_streams[i]))
         byte_count += 1
     #print(bit_streams)
 
 def inverse_transpose(bitset, len):
-    """
+    """Construct output bytestream by combining appropriate bits from bitset.
 
-    Bytestream grows left to right, process bitset from right to left since
-    they're bit streams.
+    Bytestream grows left to right, process bitset from right to left as per
+    bit stream processing convention. This method creates bytes sequentially
+    by combining the appropriate bits from the bits in bitset.
+
+    Args:
+        bitset: The set of bit streams to combine into a byte stream.
+        len: The length of the bit streams.
+
+    Returns:
+        bytestream (str): The byte stream that results from combining the bit streams
+        in bitset.
+
+    Example:
+    Bit streams:
+    101
+    111
+    100
+
+    First we process the least sig column to get 110, then we move cursor over by one
+    position and create 010, and finally 111.
     """
     bytestream = ""
     cursor = 1
     for i in range(0, len):
         byteval = 0
         for j in range(8):
-            if bitset[j] & cursor != 0:
-                # 0th pbs contains most sig bit
-                byteval += 128 >> j # 128 = 10000000
+            if bitset[j] & cursor != 0: #cursor moves us along in the bit stream
+                # 0th pbs contains least sig bit
+                byteval += 1 << j
         bytestream += chr(byteval)
         cursor += cursor # *2, equiv to << 1
     return bytestream

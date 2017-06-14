@@ -53,8 +53,14 @@ def create_pext_ms(input_file_contents, source_format=TransductionTarget.CSV):
 
     return pext_marker_stream
 
-def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTarget.JSON,
-         source_format=TransductionTarget.CSV):
+def verify_user_inputs(pack_size):
+    """Verify inputs provided by user."""
+    if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
+        # Credit to A.Polino for this check
+        raise ValueError("Pack size must be a power of two.")
+
+def main(pack_size, csv_column_names, path_to_file,
+         target_format=TransductionTarget.JSON, source_format=TransductionTarget.CSV):
     """Accept path to file in source_format and pack_size. Transduces file to target_format.
 
     Args:
@@ -70,9 +76,7 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
         The transduced file. E.g. for CSV to JSON, the JSON file that results from transducing
             the input CSV file.
     """
-    if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
-        # Credit to A.Polino for this check
-        raise ValueError("Pack size must be a power of two.")
+    verify_user_inputs(pack_size)
 
     csv_file_as_str = pablo.readfile(path_to_file)
     pext_marker_stream = create_pext_ms(csv_file_as_str, source_format)
@@ -82,30 +86,31 @@ def main(pack_size, csv_column_names, path_to_file, target_format=TransductionTa
                                                       pack_size)
     converter = None
     if target_format == TransductionTarget.JSON:
-        # TODO prompt for column names here
+        # TODO prompt for column names / types here, then extract this block as method
         converter = JSONConverter(field_widths, csv_column_names)
     else:
         raise ValueError("Unsupported target transduction format specified:", target_format)
 
-    pdep_marker_stream = create_pdep_stream(field_widths, converter)
-    json_bp_byte_stream = converter.json_bp_byte_stream
+    pdep_marker_stream = converter.create_pdep_stream()
+    json_bp_byte_stream = converter.create_bpb_stream()
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
     for i in range(8):
+        # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
         extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
         pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream)
 
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
-    #pablo.writefile('out.json', output_byte_stream)
-    print("input CSV file:", csv_file_as_str)
+    print("input CSV file:", "\n" + csv_file_as_str)
     print("CSV file column names:", csv_column_names)
     print("pext_marker_stream:", bin(pext_marker_stream))
     print("idx_marker_stream:", bin(idx_marker_stream))
     print("field widths:", field_widths)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
     print("output_JSON_file:", "\n" + output_byte_stream)
+    #pablo.writefile('out.json', output_byte_stream)
     return output_byte_stream
 
 if __name__ == '__main__':

@@ -15,16 +15,18 @@ extracted field requires.
 """
 
 from src.transducer_target_enums import TransductionTarget
+from src.converter import Converter
 
-class JSONConverter():
-    """"""
-    def __init__(self, field_widths, csv_column_names):
-        self.csv_column_names = csv_column_names
-        self.num_fields_per_unit = len(self.csv_column_names)
-        self.json_bp_byte_stream = self.create_bpb_stream(field_widths)
+class JSONConverter(Converter):
+    """Contains data and methods used to convert a set of extracted fields to JSON format.
+    """
+    def __init__(self, field_widths, json_object_field_names):
+        self.json_object_field_names = json_object_field_names
+        self.num_fields_per_unit = len(self.json_object_field_names)
+        self.field_widths = field_widths
         #TODO determine num BP bytes, maintain here and use across create_ and transduce_
 
-    def create_bpb_stream(self, field_widths):
+    def create_bpb_stream(self):
         """Create boilerplate byte stream.
 
         The boilerplate byte stream is a stream of boilerplate characters with
@@ -51,21 +53,21 @@ class JSONConverter():
         """
         # TODO prompt for column names
         # self.num_fields_per_unit == number CSV values per row in CSV file
-        if len(field_widths) % self.num_fields_per_unit != 0:
+        if len(self.field_widths) % self.num_fields_per_unit != 0:
             raise ValueError("Provided source fields cannot be cleanly packaged into JSON objects.")
 
         field_type = 0
-        num_json_objects_to_create = len(field_widths) / self.num_fields_per_unit
+        num_json_objects_to_create = len(self.field_widths) / self.num_fields_per_unit
         num_json_objs_created = 0
         json_bp_byte_stream = "[\n"
-        for fw in field_widths:
+        for fw in self.field_widths:
             if field_type == 0:
                 # first field in JSON object, start new JSON object
                 json_bp_byte_stream += "    {\n"
 
             # Add key/value pair. Indent key value pairs within {} and objects within []
             json_bp_byte_stream += "        "
-            json_bp_byte_stream += "\"" + self.csv_column_names[field_type] + "\": "
+            json_bp_byte_stream += "\"" + self.json_object_field_names[field_type] + "\": "
             json_bp_byte_stream += "_" * fw  # space for value
 
             if field_type == (self.num_fields_per_unit - 1):
@@ -85,8 +87,6 @@ class JSONConverter():
         return json_bp_byte_stream
 
     # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
-    # TODO remove csv_column_names as argument. Only needed if target is CSV. Parse/prompt
-    # user if required
     def transduce_field(self, field_wrapper, field_type, is_first_or_final_field):
         """ Pad extracted field with appropriate boilerplate.
 
@@ -123,7 +123,7 @@ class JSONConverter():
         preceeding_boilerplate_bytes = 0
         following_boilerplate_bytes = 0
         #           "<col_name>": 
-        preceeding_boilerplate_bytes = 12 + len(self.csv_column_names[field_type].encode('utf-8'))
+        preceeding_boilerplate_bytes = 12 + len(self.json_object_field_names[field_type].encode('utf-8'))
         #,\n  or \n} or \n] TODO quotes around value?
         following_boilerplate_bytes = 2
         if field_type == 0:
@@ -131,7 +131,7 @@ class JSONConverter():
                 # [\n
                 preceeding_boilerplate_bytes += 2
             preceeding_boilerplate_bytes += 6 #    {\n
-        elif field_type == len(self.csv_column_names) - 1:
+        elif field_type == len(self.json_object_field_names) - 1:
             following_boilerplate_bytes += 6 #    \n}
 
         field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
