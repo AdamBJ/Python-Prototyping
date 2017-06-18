@@ -120,5 +120,6 @@ def main(pack_size, csv_column_names, path_to_file,
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
+    main(64, ["col A", "gul", "chaava", "dabu"], "Resources/Test/unicode_test_large.csv")
+    #main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
     #main(64, ["onesy", "two", "flap!", "er"], "Resources/Test/test2.csv")

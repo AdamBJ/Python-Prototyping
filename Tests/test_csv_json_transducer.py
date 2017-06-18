@@ -138,9 +138,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
 
     def test_unicode(self):
         """Testing with non-ascii characters in csv file."""
-        #, "and 2", "ة بالعر", "hehehecatchthatone!!!!!!!!"
         result = csv_json_transducer.main(64, ["col1"], "Resources/Test/unicode_test.csv")
         self.assertEqual(result, '[\n    {\n        "col1": 한\n    }\n]')
+
+    def test_unicode2(self):
+        """Testing with non-ascii characters in large csv file."""
+        result = csv_json_transducer.main(64, ["col A", "gul", "chaava", "dabu"], "Resources/Test/unicode_test_large.csv")
+        expected_result = pablo.readfile("Resources/Verified_Output/verfied_unicode_test_large.json")
+        self.assertEqual(result, expected_result)
 
     def test_main1(self):
         """Integration test for main() == system test."""
