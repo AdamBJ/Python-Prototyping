@@ -116,10 +116,10 @@ def main(pack_size, csv_column_names, path_to_file,
     print("field widths:", field_widths)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
     print("output_JSON_file:", "\n" + output_byte_stream)
-    #pablo.writefile('out.json', output_byte_stream)
+    pablo.writefile('out.json', output_byte_stream)
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "gul", "chaava", "dabu"], "Resources/Test/unicode_test_large.csv")
-    #main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
+   #main(64, ["id","first_name","last_name","email","gender","ip_address"], "Resources/Test/test_multiline_big.csv")
+    main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
     #main(64, ["onesy", "two", "flap!", "er"], "Resources/Test/test2.csv")

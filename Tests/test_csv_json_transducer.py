@@ -159,19 +159,13 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(result,
                          '[\n    {\n        "col A": 12,\n        "col B": abc,\n        "col C": flap\n    }\n]')
 
-    def test_main3(self):
-        pass
-
-    def test_main4(self):
-        """Integration test for main() == system test
-
-        csv_input:              abcd,ff,12345,,
-        extracted_byte_stream:  abcdff12345
-        col_names = ["onesy", "two", "flap!", "er"]
-        boilerplate_byte: {\nonesy: ____,\ntwo: __,\nflap!: _____,\ner:\n}
-        output: {\nonesy: abcd,\ntwo: ff,\nflap!: 12345,\ner:\n}
-        """
-
+    # def test_main3(self):
+    #     """Test 250 line CSV file. Takes ~20 minutes on a Ubuntu 16.04 VM with limited resources."""
+    #     result = csv_json_transducer.main(64, ["id", "first_name", "last_name", "email",
+    #                                            "gender", "ip_address"],
+    #                                       "Resources/Test/test_multiline_big.csv")
+    #     expected = pablo.readfile("Resources/Verified_Output/test_multiline_big.json")
+    #     self.assertEqual(result, expected)
 
 if __name__ == '__main__':
     unittest.main()
