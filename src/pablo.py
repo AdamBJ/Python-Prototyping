@@ -251,15 +251,15 @@ def latex_streams(stream_list):
         table += "\\\\\n" + p[0] +" & \\verb`" + p[1] +"`"
     return table + "\n\\end{tabular}\n"
 
-def print_aligned_u8_byte_streams(u8_byte_stream):
+def print_aligned_u8_unicode_strings(u8_unicode_string):
     """Print out a set of 'encoding' aligned streams."""
 
     # Set the system info to print utf-8
     info = codecs.lookup('utf-8')
     sys.stdout = info.streamwriter(sys.stdout)
 
-    label_max = max([len(p[0]) for p in u8_byte_stream])
-    for p in u8_byte_stream:
+    label_max = max([len(p[0]) for p in u8_unicode_string])
+    for p in u8_unicode_string:
         sys.stdout.write(p[0] + " "*(label_max - len(p[0])) + ": ")
 
         for c in (p[1].decode('utf-8')): 		 	# for each unicode character
@@ -300,15 +300,25 @@ def get_popcount(bits):
         count += 1
     return count
 
-def serial_to_parallel(byte_stream, bit_streams):
-    """Decompose each byte into 8 bits. Store each bit in the appropriate bit stream.
+def serial_to_parallel(unicode_string, bit_streams):
+    """Encode the unicode string into a utf-8 bytestream, then decompose.
+
+    Args:
+    unicode_string (str): Unicode string representing the text we want to decompose into
+    parallel bit streams.
+    bit_streams (list of int): Structure that will contain the eight parallel bit streams that
+    result from the decomposition.
 
     Follow little-endian bit position numbering scheme. Least significant bit of each byte is bit 0,
-    most significant bit is bit 7.
+    most significant bit is bit 7. Also note that in Python 3.x, Unicode string is the default string
+    type. That means this function should work out-of-the-box for any string. However, in Python 2.x
+    the default string type is a byte string. Such a string must first be converted to a Unicode string
+    before it can be passed to this function.
     """
     byte_count = 0
-    for byte in byte_stream:
-        byte = ord(byte) # get integer representing code point of the byte
+    utf8_byte_string = unicode_string.encode()
+    for byte in utf8_byte_string:
+        #byte = ord(byte) # get integer representing code point of the byte
         #print(bin(byte))
         for i in range(8):
             #print("b4 ", bin(bit_streams[i]))
@@ -342,7 +352,7 @@ def inverse_transpose(bitset, len):
     First we process the least sig column to get 110, then we move cursor over by one
     position and create 010, and finally 111.
     """
-    bytestream = ""
+    bytestream = bytearray()
     cursor = 1
     for i in range(0, len):
         byteval = 0
@@ -350,9 +360,9 @@ def inverse_transpose(bitset, len):
             if bitset[j] & cursor != 0: #cursor moves us along in the bit stream
                 # 0th pbs contains least sig bit
                 byteval += 1 << j
-        bytestream += chr(byteval)
+        bytestream.append(byteval)
         cursor += cursor # *2, equiv to << 1
-    return bytestream
+    return bytestream.decode('utf-8')
 
 def count_leading_ones(strm):
     ones = 0
