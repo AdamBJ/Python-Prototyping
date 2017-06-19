@@ -18,45 +18,6 @@ from src.pdep_stream_gen import create_pdep_stream
 from src import field_width
 from src.json_converter import JSONConverter
 
-
-def create_pext_ms(input_file_contents, source_format=TransductionTarget.CSV):
-    """Create pext marker stream from the file contents based on the target format.
-
-    Quick-and-dirty python implementation of a simplified character class compiler.
-    Search for different characters depending on the target_format. Currently only
-    JSON is supported. Remember that bit streams grow from right to left, starting from
-    bit position 0. See
-    https://github.com/AdamBJ/Python-Prototyping/wiki/Bit-stream-growth-and-processing-order
-
-    JSON: Scan the input file bytestream for instances of non-delimiter characters
-    (i.e. anything that's not ',').
-
-    Args:
-        target_format (enum): The format of the output final file (e.g. JSON for CSV to JSON).
-        input_file_contents (str): Contents of the input file (e.g. CSV file for CSV to JSON).
-    Return:
-        pext_marker_stream: A bit stream identifying the locations of bits in the input file
-        we want the PEXT operation to extract.
-    Example:
-        Input file is abc,123,def and target == JSON, pext_marker_stream would be 11101110111.
-        abc,1234 -> 11110111
-    """
-    pext_marker_stream = 0
-    shift_amnt = 0
-    if source_format == TransductionTarget.CSV:
-        for character in input_file_contents:
-            if character != ',' and character != '\n':
-                num_bytes = len(character.encode())
-                char_mask = int(('1' * num_bytes), 2)
-                pext_marker_stream = (char_mask << shift_amnt) | pext_marker_stream
-            else:
-                num_bytes = 1 # , and \n are 1 byte
-            shift_amnt += num_bytes
-    else:
-        raise ValueError("Only CSV transduction is supported.")
-
-    return pext_marker_stream
-
 def verify_user_inputs(pack_size):
     """Verify inputs provided by user."""
     if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
@@ -83,7 +44,7 @@ def main(pack_size, csv_column_names, path_to_file,
     verify_user_inputs(pack_size)
 
     csv_file_as_str = pablo.readfile(path_to_file)
-    pext_marker_stream = create_pext_ms(csv_file_as_str, source_format)
+    pext_marker_stream = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
     idx_marker_stream = pablo.create_idx_ms(pext_marker_stream, pack_size)
     field_widths = field_width.calculate_field_widths(pext_marker_stream,
                                                       idx_marker_stream,

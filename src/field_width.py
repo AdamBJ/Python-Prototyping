@@ -135,6 +135,6 @@ def create_field_width_ms(pext_marker_stream):
     pext_marker_stream = temp
 
     field_width_stream = ~pext_marker_stream
-    field_width_stream &= (1 << (end_of_fields_posn + 1)) - 1
+    field_width_stream &= (1 << (end_of_fields_posn + 1)) - 1 # 1110111 -> 10001000
     # field_width_stream_wrapper += 2 ** (len(csv_file_as_str) + 1) also works! Take away + 1 abv
     return field_width_stream

@@ -14,6 +14,10 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src import field_width
 from src.pablo import BitStream
+from src.transducer_target_enums import TransductionTarget
+from src import csv_json_transducer
+from src import pablo
+
 
 class TestFieldWidthMethods(unittest.TestCase):
     """
@@ -39,6 +43,23 @@ class TestFieldWidthMethods(unittest.TestCase):
         pack_size = 64
         self.assertEqual(field_width.calculate_field_widths
                          (field_width_stream, idx_marker_stream, pack_size), [3, 0, 5])
+
+    # def test_empty_fields(self):
+    #     """Verify empty fields at line ends are processed correctly.
+
+    #     Earlier version of the transducer didn't calculate field widths
+    #     for empty fields at the end of the CSV file properly. This test
+    #     makes sure such fields are processed in the way we expect.
+    #     """
+    #     pack_size = 64
+    #     csv_file_as_str = "a,b,,"
+    #     pext_marker_stream = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
+    #     idx_marker_stream = pablo.create_idx_ms(pext_marker_stream, pack_size)
+    #     field_widths = field_width.calculate_field_widths(pext_marker_stream,
+    #                                                       idx_marker_stream,
+    #                                                       pack_size)
+
+    #     self.assertEqual(field_widths, [1, 1, 0, 0])
 
     def test_multpack(self):
         """Test with multi-pack field_width_stream and non-standard pack_size."""

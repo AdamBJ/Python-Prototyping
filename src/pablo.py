@@ -418,6 +418,25 @@ def get_width_next_field(bit_stream):
     fw = count_leading_ones(bit_stream)
     return fw
 
+def create_pext_ms(byte_stream, target_characters, get_inverse=False):
+    """Create a PEXT marker stream based on characters in target_characters."""
+    pext_marker_stream = 0
+    shift_amnt = 0
+    for character in byte_stream:
+        condition = None
+        if get_inverse:
+            condition = character not in target_characters
+        else:
+            condition = character in target_characters
+
+        if condition:
+            num_bytes = len(character.encode())
+            char_mask = int(('1' * num_bytes), 2)
+            pext_marker_stream = (char_mask << shift_amnt) | pext_marker_stream
+        else:
+            num_bytes = 1 # , and \n are 1 byte
+        shift_amnt += num_bytes
+    return pext_marker_stream
 def apply_pext(bit_stream, pext_marker_stream):
     """Apply quick-and-dirty python version of PEXT to bit_stream.
 

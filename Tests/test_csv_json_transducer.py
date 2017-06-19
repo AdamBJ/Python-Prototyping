@@ -32,13 +32,6 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, [""], "")
 
-    def test_create_pext_ms(self):
-        """Unit test for create_pext_ms."""
-        csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
-        self.assertEqual(pext_ms, int("11110111011", 2))
-
     def test_create_extracted_bit_streams(self):
         """Integration test for pext_ms creation, pext application, s2p, p2s operations.
 
@@ -51,7 +44,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             Result: abc123
         """
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
-        pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
+        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
 
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -65,17 +58,11 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
         self.assertEqual(extracted_byte_stream, "12abcflap")
 
-    def test_create_idx_ms(self):
-        """Unit test for create_idx_ms."""
-        idx_ms = pablo.create_idx_ms(int("11011101111", 2), 64)
-        self.assertEqual(idx_ms, 1)
-    
     def test_create_bp_bs(self):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
         csv_column_names = ["col1"]
         csv_file_as_str = pablo.readfile('Resources/Test/s2p_test.csv')
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
+        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
         pack_size = 64
         idx_marker_stream = pablo.create_idx_ms(
             pext_ms, pack_size)
@@ -95,8 +82,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
+        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
         idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
         field_widths = field_width.calculate_field_widths(pext_ms,
                                                           idx_ms,
