@@ -13,7 +13,7 @@ processing from the field we scanned last. This field is the first field to appe
 """
 from src import pablo
 
-def calculate_field_widths(byte_stream, pack_size):
+def calculate_field_widths(byte_stream, pack_size, field_end_delims=[",", "\n"]):
     """Calculate the field widths of all fields stored in field_width_stream.
 
     idx_marker_stream_wrapper.value contains numberBitsInPEXTStream/packSize bits. Set bits in this
@@ -31,15 +31,11 @@ def calculate_field_widths(byte_stream, pack_size):
     output =  [3,3,3]
 
     Args:
-        pext_marker_stream (int): Stream we will process to determine the field widths. A sequence
-            of set bits in pext_marker_stream corresponds to a field.
-        idx_marker_stream (int): Stream that tells us which segements of pext_marker_stream we
-            should investigate. A set bit in idx_marker stream means that a field exists in a
-            pack_sized segment of pext_marker_stream.
+       TODO
         pack_size (int): Integer that tells us how many bits of pext_marker_stream is represented
             by a single bit of idx_marker_stream.
     """
-    pext_marker_stream = pablo.create_pext_ms(byte_stream, [",", "\n"], True)
+    pext_marker_stream = pablo.create_pext_ms(byte_stream, field_end_delims, True)
     field_width_stream = create_field_width_ms(pext_marker_stream)
     idx_marker_stream = pablo.create_idx_ms(field_width_stream, pack_size)
     # Allows us to simulate pass-by-reference for our streams
@@ -53,7 +49,7 @@ def calculate_field_widths(byte_stream, pack_size):
         field_start = process_pack(field_width_stream, field_widths, field_start,
                                    non_zero_pack_idx, pack_size)
 
-    delimiter_marker_stream = pablo.create_pext_ms(byte_stream, [",", "\n"])
+    delimiter_marker_stream = pablo.create_pext_ms(byte_stream, field_end_delims)
     while len(field_widths) < pablo.get_popcount(delimiter_marker_stream):
         field_widths.append(0)
     return field_widths

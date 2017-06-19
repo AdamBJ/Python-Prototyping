@@ -48,7 +48,7 @@ class TestPabloMethods(unittest.TestCase):
             Remember that least sig bit of each byte (i.e. right most bit) goes to
             bit stream 0. Also remember that each of the bit streams grow from right to
             left, so the first byte is represented by the rightmost bit of each PBS.
-
+ADD THE NEWLINE DUMMY!
             first bit from each byte =  7 = 000
                                         6 = 000
                                         5 = 111
