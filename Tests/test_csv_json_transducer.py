@@ -32,13 +32,6 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, [""], "")
 
-    def test_create_pext_ms(self):
-        """Unit test for create_pext_ms."""
-        csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
-        self.assertEqual(pext_ms, int("11110111011", 2))
-
     def test_create_extracted_bit_streams(self):
         """Integration test for pext_ms creation, pext application, s2p, p2s operations.
 
@@ -51,7 +44,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             Result: abc123
         """
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
-        pext_ms = csv_json_transducer.create_pext_ms(csv_file_as_str)
+        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
 
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -65,21 +58,12 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
         self.assertEqual(extracted_byte_stream, "12abcflap")
 
-    def test_create_idx_ms(self):
-        """Unit test for create_idx_ms."""
-        idx_ms = pablo.create_idx_ms(int("11011101111", 2), 64)
-        self.assertEqual(idx_ms, 1)
-    
     def test_create_bp_bs(self):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
         csv_column_names = ["col1"]
         csv_file_as_str = pablo.readfile('Resources/Test/s2p_test.csv')
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
         pack_size = 64
-        idx_marker_stream = pablo.create_idx_ms(
-            pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pext_ms, idx_marker_stream, pack_size)
+        field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
         converter = JSONConverter(field_widths, csv_column_names)
 
         json_bp_byte_stream = converter.create_bpb_stream()
@@ -95,12 +79,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
-        pext_ms = csv_json_transducer.create_pext_ms(
-            csv_file_as_str)
-        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pext_ms,
-                                                          idx_ms,
-                                                          pack_size)
+        field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
         csv_column_names = ["col1", "col2", "col3"]
         converter = JSONConverter(field_widths, csv_column_names)
         actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter,
@@ -138,9 +117,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
 
     def test_unicode(self):
         """Testing with non-ascii characters in csv file."""
-        #, "and 2", "ة بالعر", "hehehecatchthatone!!!!!!!!"
         result = csv_json_transducer.main(64, ["col1"], "Resources/Test/unicode_test.csv")
         self.assertEqual(result, '[\n    {\n        "col1": 한\n    }\n]')
+
+    def test_unicode2(self):
+        """Testing with non-ascii characters in large csv file."""
+        result = csv_json_transducer.main(64, ["col A", "gul", "chaava", "dabu"], "Resources/Test/unicode_test_large.csv")
+        expected_result = pablo.readfile("Resources/Verified_Output/verfied_unicode_test_large.json")
+        self.assertEqual(result, expected_result)
 
     def test_main1(self):
         """Integration test for main() == system test."""
@@ -154,19 +138,13 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(result,
                          '[\n    {\n        "col A": 12,\n        "col B": abc,\n        "col C": flap\n    }\n]')
 
-    def test_main3(self):
-        pass
-
-    def test_main4(self):
-        """Integration test for main() == system test
-
-        csv_input:              abcd,ff,12345,,
-        extracted_byte_stream:  abcdff12345
-        col_names = ["onesy", "two", "flap!", "er"]
-        boilerplate_byte: {\nonesy: ____,\ntwo: __,\nflap!: _____,\ner:\n}
-        output: {\nonesy: abcd,\ntwo: ff,\nflap!: 12345,\ner:\n}
-        """
-
+    # def test_main3(self):
+    #     """Test 250 line CSV file. Takes ~20 minutes on a Ubuntu 16.04 VM with limited resources."""
+    #     result = csv_json_transducer.main(64, ["id", "first_name", "last_name", "email",
+    #                                            "gender", "ip_address"],
+    #                                       "Resources/Test/test_multiline_big.csv")
+    #     expected = pablo.readfile("Resources/Verified_Output/test_multiline_big.json")
+    #     self.assertEqual(result, expected)
 
 if __name__ == '__main__':
     unittest.main()

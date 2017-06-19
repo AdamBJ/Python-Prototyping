@@ -23,6 +23,17 @@ from src import pdep_stream_gen
 class TestPabloMethods(unittest.TestCase):
     """Contains unit tests for the functions in pablo.py"""
 
+    def test_create_idx_ms(self):
+        """Unit test for create_idx_ms."""
+        idx_ms = pablo.create_idx_ms(int("11011101111", 2), 64)
+        self.assertEqual(idx_ms, 1)
+
+    def test_create_pext_ms(self):
+        """Unit test for create_pext_ms."""
+        csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
+        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
+        self.assertEqual(pext_ms, int("11110111011", 2))
+
     def test_serial_to_parallel_and_back(self):
         """
         Input: CSV file containing 123
