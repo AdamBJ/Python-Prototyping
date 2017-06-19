@@ -32,6 +32,37 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, [""], "")
 
+    def test_bad_input2(self):
+        """Test with malformed single line CSV file.
+
+        File is abc,123,haha. No newline marking end of final field.
+        """
+        pack_size = 64
+        self.assertRaises(
+            ValueError, csv_json_transducer.main, pack_size, ["hehe", "haha", "hoho"],
+            "Resources/Test/malformed_rows.csv")
+
+    def test_bad_input3(self):
+        """Test with malformed multi line CSV file.
+
+        Missing final newline character.
+        """
+        pack_size = 64
+        self.assertRaises(
+            ValueError, csv_json_transducer.main, pack_size, ["hehe", "haha", "hoho"],
+            "Resources/Test/malformed_rows_multi.csv")
+
+    def test_bad_input4(self):
+        """Test with malformed multi line CSV file.
+
+        Missing some fields in final row.
+        """
+        pack_size = 64
+        self.assertRaises(
+            ValueError, csv_json_transducer.main, pack_size, ["hehe", "haha", "hoho"],
+            "Resources/Test/malformed_rows_multi2.csv")
+
+
     def test_create_extracted_bit_streams(self):
         """Integration test for pext_ms creation, pext application, s2p, p2s operations.
 
@@ -44,7 +75,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             Result: abc123
         """
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv") #12,abc,flap
-        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
+        fields_pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
 
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -53,7 +84,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(resassemble_test, "12,abc,flap")
 
         for i, stream in enumerate(csv_bit_streams):
-            extracted_bit_streams[i] = pablo.apply_pext(stream, pext_ms)
+            extracted_bit_streams[i] = pablo.apply_pext(stream, fields_pext_ms)
 
         extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, 9)
         self.assertEqual(extracted_byte_stream, "12abcflap")

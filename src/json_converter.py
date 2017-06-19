@@ -25,6 +25,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from src.transducer_target_enums import TransductionTarget
 from src.converter import Converter
+from src import pablo
 
 class JSONConverter(Converter):
     """Contains data and methods used to convert a set of extracted fields to JSON format.
@@ -43,6 +44,34 @@ class JSONConverter(Converter):
     @property
     def field_widths(self):
         return self._field_widths
+
+    def verify_user_inputs(self, pack_size, byte_stream):
+        self.verify_pack_size(pack_size)
+        field_end_pms = pablo.create_pext_ms(byte_stream, [",", "\n"])
+
+        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        # Decompose the input bytestream and output byte stream template into parallel bit streams
+        pablo.serial_to_parallel(byte_stream, csv_bit_streams)
+        for i in range(8):
+            # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
+            extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], field_end_pms)
+        # Combine the transduced parallel bit streams into the final output byte stream
+        extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams,
+                                                        pablo.get_popcount(field_end_pms))
+
+        count = 0
+        for character in extracted_byte_stream:
+            if count == (self._num_fields_per_unit - 1) and character != "\n":
+                raise ValueError("Input CSV file contains row missing a newline terminator.")
+            elif count == (self._num_fields_per_unit - 1): # found the newline
+                count = 0
+            else:
+                count += 1
+
+        # Check for incomplete rows
+        if count != 0:
+            raise ValueError("Input CSV file contains malformed row.")
 
     def create_bpb_stream(self):
         """Create boilerplate byte stream.

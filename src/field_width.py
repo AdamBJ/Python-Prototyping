@@ -49,7 +49,7 @@ def calculate_field_widths(byte_stream, pack_size):
     field_widths = []
     field_start = -1
     while idx_marker_stream_wrapper.value:
-        non_zero_pack_idx = find_nonzero_pack(idx_marker_stream_wrapper) #WRONG! Should be skipping 0 packs
+        non_zero_pack_idx = find_nonzero_pack(idx_marker_stream_wrapper)
         field_start = process_pack(field_width_stream, field_widths, field_start,
                                    non_zero_pack_idx, pack_size)
 

@@ -36,7 +36,7 @@ class TestPabloMethods(unittest.TestCase):
 
     def test_serial_to_parallel_and_back(self):
         """
-        Input: CSV file containing 123
+        Input: CSV file containing 123\n
         Expected output: [0, 0, 7, 7, 0, 0, 3, 5]
 
         Explanation:

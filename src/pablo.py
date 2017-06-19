@@ -437,7 +437,7 @@ def create_pext_ms(byte_stream, target_characters, get_inverse=False):
             num_bytes = 1 # , and \n are 1 byte
         shift_amnt += num_bytes
     return pext_marker_stream
-    
+
 def apply_pext(bit_stream, pext_marker_stream):
     """Apply quick-and-dirty python version of PEXT to bit_stream.
 

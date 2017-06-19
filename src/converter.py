@@ -92,6 +92,12 @@ class Converter(ABC):
         pdep_marker_stream.value = (field_wrapper.value << shift_amount) \
                                 | pdep_marker_stream.value
 
+    def verify_pack_size(self, pack_size):
+        """Verify inputs provided by user."""
+        if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
+            # Credit to A.Polino for this check
+            raise ValueError("Pack size must be a power of two.")
+
     @abstractmethod
     def transduce_field(self, field_wrapper, field_type, is_first_or_final_field):
         """Implementation is output format dependant. Any concrete subclasses of Converter
@@ -100,6 +106,12 @@ class Converter(ABC):
 
     @abstractmethod
     def create_bpb_stream(self):
+        """Implementation is output format dependant. Any concrete subclasses of Converter
+        must implement this method."""
+        pass
+    
+    @abstractmethod
+    def verify_user_inputs(self, pack_size, byte_stream):
         """Implementation is output format dependant. Any concrete subclasses of Converter
         must implement this method."""
         pass
