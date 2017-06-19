@@ -16,6 +16,11 @@ def create_actual_pdep_marker_stream(converter, field_widths, csv_column_names):
 
 
 def create_expected_pdep_ms(converter, field_widths, csv_column_names):
+    """Create pdep marker stream based on the rules programmed into the transducer.
+
+    It can be quite tedious to hand write the pdep marker stream. Sometimes it's easier to
+    manually verify the pdep stream created by the program.
+    """
     expected_pdep_ms = ""
 
     is_first_or_final_field = 0

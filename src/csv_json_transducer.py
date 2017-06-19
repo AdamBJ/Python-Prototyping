@@ -46,8 +46,12 @@ def create_pext_ms(input_file_contents, source_format=TransductionTarget.CSV):
     if source_format == TransductionTarget.CSV:
         for character in input_file_contents:
             if character != ',' and character != '\n':
-                pext_marker_stream = (1 << shift_amnt) | pext_marker_stream
-            shift_amnt += 1
+                num_bytes = len(character.encode())
+                char_mask = int(('1' * num_bytes), 2)
+                pext_marker_stream = (char_mask << shift_amnt) | pext_marker_stream
+            else:
+                num_bytes = 1 # , and \n are 1 byte
+            shift_amnt += num_bytes
     else:
         raise ValueError("Only CSV transduction is supported.")
 
@@ -95,14 +99,16 @@ def main(pack_size, csv_column_names, path_to_file,
     json_bp_byte_stream = converter.create_bpb_stream()
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+    extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
     for i in range(8):
         # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
-        extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
-        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bits_stream)
+        extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
+        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bit_streams[i])
 
-    output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
+    output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream)) # Unicode str
+    extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, sum(field_widths))
     print("input CSV file:", "\n" + csv_file_as_str)
     print("CSV file column names:", csv_column_names)
     print("pext_marker_stream:", bin(pext_marker_stream))
@@ -114,4 +120,5 @@ def main(pack_size, csv_column_names, path_to_file,
     return output_byte_stream
 
 if __name__ == '__main__':
-    main(64, ["col A", "col B", "col C"], "Resources/Test/test_multiline_small.csv")
+    main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
+    #main(64, ["onesy", "two", "flap!", "er"], "Resources/Test/test2.csv")
