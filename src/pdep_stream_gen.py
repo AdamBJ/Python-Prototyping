@@ -61,10 +61,10 @@ def create_pdep_stream(field_widths, converter):
     shift_amnt = 0
     # process fields in the order they appear in the file, i.e. from left to right
     for i, field_width in enumerate(field_widths):
-        is_first_or_final_field = True if i == 0 or i == (len(field_widths) - 1) else False
+        starts_or_ends_file = True if i == 0 or i == (len(field_widths) - 1) else False
         field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
         num_boilerplate_bytes_added = converter.transduce_field(field_wrapper, field_type,
-                                                                is_first_or_final_field)
+                                                                starts_or_ends_file)
         insert_field(field_wrapper, pdep_marker_stream, shift_amnt)
         shift_amnt += num_boilerplate_bytes_added + field_width
         field_type += 1

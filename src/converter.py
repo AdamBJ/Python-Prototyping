@@ -1,4 +1,6 @@
-""" Contains the abstract Converter class."""
+""" Contains the abstract Converter class. Inherit from this class each time support
+for a new target format is to be added to the transducer.
+"""
 import sys
 import os
 from abc import ABC, abstractmethod, abstractproperty
@@ -31,47 +33,52 @@ class Converter(ABC):
         """Adds abstract member variable "num_fields_per_unit" that concrete subclasses must define."""
         pass
 
+    @abstractmethod
+    def transduce_field(self, field_wrapper, field_type, starts_or_ends_file):
+        """Implementation is output format dependant. Any concrete subclasses of Converter
+        must implement this method."""
+        pass
+
+    @abstractmethod
+    def create_bpb_stream(self):
+        """Implementation is output format dependant. Any concrete subclasses of Converter
+        must implement this method."""
+        pass
+
+    @abstractmethod
+    def verify_user_inputs(self, pack_size, byte_stream):
+        """Implementation is output format dependant. Any concrete subclasses of Converter
+        must implement this method."""
+        pass
+        
     def create_pdep_stream(self):
         """Generate a bit mask stream for use with the PDEP operation.
 
-        Takes as input a list containing field widths and a target format and produces a PDEP
+        Takes a list containing field widths and a target format and produces a PDEP
         marker stream. The PDEP marker stream shows where in an output stream the extracted
         bits should be inserted in order to complete the desired transduction operation.
 
         All streams are represented as (unbounded) integers. BitStream class is provided as a
-        means of passing these integers "by reference". Doing so allows us to make changes
+        means of passing these integers to fxns "by reference". Doing so allows us to make changes
         to our "stream" variables inside methods and have these changes persist once the
         methods return.
-
-        Note that we process each stream from least significant bit to most significant bit
-        (i.e. right to left). Scans naturally start from the righthand side of the least sig bit.
-        However, as disscussed in the field_width.py doc string, we
-        read the input document from left to right. Therefore, while we transduce fields from left
-        to right, we process streams (to extract information like field widths) by scanning them from
-        right to left.
-
-        Args:
-            self.field_widths: The widths of the fields contained in the input file.
-            converter: Object containing attributes and methods used to convert fields
-                to a particular format.
 
         Returns (BitStream):
             The pdep bit stream.
 
         Examples:
-            >>> create_pdep_stream([3, 3, 3], TransductionTarget.JSON,
-                                    ["col1", "col2", "col3"])
-                                    TODO
+            See test_pdep_stream_gen.py
         """
         pdep_marker_stream = pablo.BitStream(0)
         field_type = 0
+        # Tracks number bits already written. We skip over these before inserting new transduced field
         shift_amnt = 0
         # process fields in the order they appear in the file, i.e. from left to right
         for i, field_width in enumerate(self.field_widths):
-            is_first_or_final_field = True if i == 0 or i == (len(self.field_widths) - 1) else False
+            starts_or_ends_file = True if i == 0 or i == (len(self.field_widths) - 1) else False
             field_wrapper = pablo.BitStream((1 << field_width) - 1) # create field
             num_boilerplate_bytes_added = self.transduce_field(field_wrapper, field_type,
-                                                               is_first_or_final_field)
+                                                               starts_or_ends_file)
             self.insert_field(field_wrapper, pdep_marker_stream, shift_amnt)
             shift_amnt += num_boilerplate_bytes_added + field_width
             field_type += 1
@@ -98,20 +105,3 @@ class Converter(ABC):
             # Credit to A.Polino for this check
             raise ValueError("Pack size must be a power of two.")
 
-    @abstractmethod
-    def transduce_field(self, field_wrapper, field_type, is_first_or_final_field):
-        """Implementation is output format dependant. Any concrete subclasses of Converter
-        must implement this method."""
-        pass
-
-    @abstractmethod
-    def create_bpb_stream(self):
-        """Implementation is output format dependant. Any concrete subclasses of Converter
-        must implement this method."""
-        pass
-    
-    @abstractmethod
-    def verify_user_inputs(self, pack_size, byte_stream):
-        """Implementation is output format dependant. Any concrete subclasses of Converter
-        must implement this method."""
-        pass

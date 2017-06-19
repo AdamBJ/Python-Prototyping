@@ -133,8 +133,7 @@ class JSONConverter(Converter):
 
         return json_bp_byte_stream
 
-    # TODO check handles non-ASCII encodings (everything but UTF-16 should work)
-    def transduce_field(self, field_wrapper, field_type, is_first_or_final_field):
+    def transduce_field(self, field_wrapper, field_type, starts_or_ends_file):
         """ Pad extracted field with appropriate boilerplate.
 
         The amount of boilerplate padding we need to add depends on how many
@@ -144,9 +143,9 @@ class JSONConverter(Converter):
             field_wrapper (BitStream): The field to transduce.
             field_type: A scalar describing the type of the field to be transduced (i.e.
                 it's ordinality within the data unit it will belong to in the output).
-            is_first_or_final_field (boolean): True if this is the first field we've processed
-                or the last field we will process. Tells us when to add special starting/ending
-                boilerplate syntax.
+            starts_or_ends_file (boolean): True if this is the first field we've processed
+                or the last field we will process in a file. Tells us when to add special
+                starting/ending boilerplate syntax.
         Returns:
             Number of boilerplate padding bytes added. Also, field_wrapper is "passed by
             reference", so the changes we make to field_wrapper.value persist after
@@ -167,11 +166,13 @@ class JSONConverter(Converter):
             Together: `    {\n        "col1": ___,\n
 
         """
-        preceeding_boilerplate_bytes, following_boilerplate_bytes = self.get_preceeding_following_bpb(field_type, is_first_or_final_field)
+        preceeding_boilerplate_bytes, following_boilerplate_bytes = \
+            self.get_preceeding_following_bpb(field_type, starts_or_ends_file)
         field_wrapper.value = field_wrapper.value << preceeding_boilerplate_bytes
         return preceeding_boilerplate_bytes + following_boilerplate_bytes
 
-    def get_preceeding_following_bpb(self, field_type, is_first_or_final_field):
+    def get_preceeding_following_bpb(self, field_type, starts_or_ends_file):
+        """Get number boilerplate bytes following or preceeding the current field."""
         preceeding_boilerplate_bytes = 0
         following_boilerplate_bytes = 0
         #           "<col_name>": 
@@ -179,7 +180,7 @@ class JSONConverter(Converter):
         #,\n  or \n} or \n] TODO quotes around value?
         following_boilerplate_bytes = 2
         if field_type == 0:
-            if is_first_or_final_field:
+            if starts_or_ends_file:
                 # [\n
                 preceeding_boilerplate_bytes += 2
             preceeding_boilerplate_bytes += 6 #    {\n

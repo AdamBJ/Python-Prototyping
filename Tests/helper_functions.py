@@ -23,15 +23,15 @@ def create_expected_pdep_ms(converter, field_widths, csv_column_names):
     """
     expected_pdep_ms = ""
 
-    is_first_or_final_field = 0
+    starts_or_ends_file = 0
     for i, fw in enumerate(field_widths):
         if i == 0 or i == (len(field_widths) - 1):
-            is_first_or_final_field = 1
+            starts_or_ends_file = 1
         else:
-            is_first_or_final_field = 0
+            starts_or_ends_file = 0
 
         preceeding_bpb, following_bpb = converter.get_preceeding_following_bpb(
-            i % converter._num_fields_per_unit, is_first_or_final_field)
+            i % converter._num_fields_per_unit, starts_or_ends_file)
         expected_pdep_ms = ("0" * following_bpb) + ("1" * fw) + \
             ("0" * preceeding_bpb) + expected_pdep_ms
     return expected_pdep_ms

@@ -1,5 +1,5 @@
 """
-Contains the "main" method that we call to transduce a field in one formatdsdddd
+Contains the "main" method that we call to transduce a field in one format
 to a field in another format. Currently the only transduction operation
 supported is CSV to JSON.
 """
@@ -20,7 +20,7 @@ from src.json_converter import JSONConverter
 
 def main(pack_size, csv_column_names, path_to_file,
          target_format=TransductionTarget.JSON, source_format=TransductionTarget.CSV):
-    """Accept path to file in source_format and pack_size. Transduces file to target_format.
+    """Accept path to file in source_format, transduces file to target_format.
 
     Args:
         pack_size: size of fundamental stream processing unit. The real version of PDEP and PEXT
@@ -31,14 +31,15 @@ def main(pack_size, csv_column_names, path_to_file,
             transduction target == JSON.
         path_to_file(str): path to file to transduce. Absolute, or relative to the main
             project directory.
+        target_format: The format we want to transduce file at path_to_file to.
+        source_format: The format of the file at path_to_file.
     Returns:
         The transduced file. E.g. for CSV to JSON, the JSON file that results from transducing
             the input CSV file.
     """
-
     # Create the streams and objects we'll need to perform the transduction
     csv_file_as_str = pablo.readfile(path_to_file)
-    field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
+    field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size) #TODO refactor, make part of covnerter.py?
     converter = None
     if target_format == TransductionTarget.JSON:
         # TODO prompt for column names / types here, then extract this block as method
