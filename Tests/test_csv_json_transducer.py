@@ -62,11 +62,8 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Input of 123 was resulting in '{\ncol1: ___,\n'."""
         csv_column_names = ["col1"]
         csv_file_as_str = pablo.readfile('Resources/Test/s2p_test.csv')
-        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
         pack_size = 64
-        idx_marker_stream = pablo.create_idx_ms(
-            pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pext_ms, idx_marker_stream, pack_size)
+        field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
         converter = JSONConverter(field_widths, csv_column_names)
 
         json_bp_byte_stream = converter.create_bpb_stream()
@@ -82,11 +79,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """
         pack_size = 64
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
-        pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
-        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
-        field_widths = field_width.calculate_field_widths(pext_ms,
-                                                          idx_ms,
-                                                          pack_size)
+        field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
         csv_column_names = ["col1", "col2", "col3"]
         converter = JSONConverter(field_widths, csv_column_names)
         actual_pdep_marker_stream = helper_functions.create_actual_pdep_marker_stream(converter,

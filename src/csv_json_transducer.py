@@ -43,37 +43,37 @@ def main(pack_size, csv_column_names, path_to_file,
     """
     verify_user_inputs(pack_size)
 
+    # Create the streams and objects we'll need to perform the transduction
     csv_file_as_str = pablo.readfile(path_to_file)
-    pext_marker_stream = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
-    idx_marker_stream = pablo.create_idx_ms(pext_marker_stream, pack_size)
-    field_widths = field_width.calculate_field_widths(pext_marker_stream,
-                                                      idx_marker_stream,
-                                                      pack_size)
+    field_widths = field_width.calculate_field_widths(csv_file_as_str, pack_size)
     converter = None
     if target_format == TransductionTarget.JSON:
         # TODO prompt for column names / types here, then extract this block as method
         converter = JSONConverter(field_widths, csv_column_names)
     else:
         raise ValueError("Unsupported target transduction format specified:", target_format)
-
+    pext_marker_stream = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
     pdep_marker_stream = converter.create_pdep_stream()
     json_bp_byte_stream = converter.create_bpb_stream()
     json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
     extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+    # Decompose the input bytestream and output byte stream template into parallel bit streams
     pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
     pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
+
+    # Transduce each parallel bit stream
     for i in range(8):
         # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
         extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
         pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bit_streams[i])
 
+    # Combine the transduced parallel bit streams into the final output byte stream
     output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream)) # Unicode str
-    extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, sum(field_widths))
+    #extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, sum(field_widths))
     print("input CSV file:", "\n" + csv_file_as_str)
     print("CSV file column names:", csv_column_names)
     print("pext_marker_stream:", bin(pext_marker_stream))
-    print("idx_marker_stream:", bin(idx_marker_stream))
     print("field widths:", field_widths)
     print("pdep_marker_stream:", bin(pdep_marker_stream))
     print("output_JSON_file:", "\n" + output_byte_stream)
@@ -82,5 +82,5 @@ def main(pack_size, csv_column_names, path_to_file,
 
 if __name__ == '__main__':
    #main(64, ["id","first_name","last_name","email","gender","ip_address"], "Resources/Test/test_multiline_big.csv")
-    main(64, ["col A", "gul"], "Resources/Test/unicode_test.csv")
+    main(64, ["col A"], "Resources/Test/unicode_test.csv")
     #main(64, ["onesy", "two", "flap!", "er"], "Resources/Test/test2.csv")
