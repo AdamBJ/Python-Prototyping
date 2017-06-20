@@ -50,7 +50,13 @@ class Converter(ABC):
         """Implementation is output format dependant. Any concrete subclasses of Converter
         must implement this method."""
         pass
-        
+
+    @abstractmethod
+    def transduce(self, file_as_str, fields_pext_ms, return_extracted_bs=False):
+        """Implementation is output format dependant. Any concrete subclasses of Converter
+        must implement this method."""
+        pass
+
     def verify_pack_size(self, pack_size):
         """Verify inputs provided by user."""
         if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:

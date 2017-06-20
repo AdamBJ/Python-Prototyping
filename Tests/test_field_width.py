@@ -18,7 +18,6 @@ from src.transducer_target_enums import TransductionTarget
 from src import csv_json_transducer
 from src import pablo
 
-
 class TestFieldWidthMethods(unittest.TestCase):
     """
     Test the functions in field_width.py with PyUnit.

@@ -1,3 +1,4 @@
+"""Contains helper functions that makes running the tests in Test more convienient."""
 import sys
 import os
 PACKAGE_PARENT = '..'
@@ -10,7 +11,7 @@ from src import pablo
 from src.json_converter import JSONConverter
 
 def create_actual_pdep_marker_stream(converter, field_widths, csv_column_names):
-    """Return a JSONConvert object."""
+    """Run create_pdep marker stream with provided inputs, return result."""
     pdep_marker_stream = pablo.BitStream(converter.create_pdep_stream())
     return pdep_marker_stream
 
@@ -19,7 +20,8 @@ def create_expected_pdep_ms(converter, field_widths, csv_column_names):
     """Create pdep marker stream based on the rules programmed into the transducer.
 
     It can be quite tedious to hand write the pdep marker stream. Sometimes it's easier to
-    manually verify the pdep stream created by the program.
+    manually verify the pdep stream created by the program. However, don't use this 
+    function as a replacement for static, verified, hard-coded expected values. 
     """
     expected_pdep_ms = ""
 

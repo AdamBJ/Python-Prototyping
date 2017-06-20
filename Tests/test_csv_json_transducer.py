@@ -19,15 +19,11 @@ from src import field_width
 from src.json_converter import JSONConverter
 from Tests import helper_functions
 
-# TODO More *realistic* tests. Visually inspect output JSON, save as "verified" output. Test
-# program's output against. Umple did this type of test.
-
-
 class TestCSVJSONTransducerMethods(unittest.TestCase):
     """Contains a mix of unit tests and integration/system tests."""
 
     def test_bad_input(self):
-        """Test with pack_size that isn't a power of 2"""
+        """Test with pack_size that isn't a power of 2."""
         pack_size = 63
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, [""],
@@ -44,32 +40,25 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
             "Resources/Test/malformed_rows.csv")
 
     def test_bad_input3(self):
-        """Test with malformed multi line CSV file.
-
-        Missing final newline character.
-        """
+        """Test with malformed multiline CSV file that's missing final newline character."""
         pack_size = 64
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, ["hehe", "haha", "hoho"],
             "Resources/Test/malformed_rows_multi.csv")
 
     def test_bad_input4(self):
-        """Test with malformed multi line CSV file.
-
-        Missing some fields in final row.
-        """
+        """Test with malformed multi line CSV file. Missing some fields in final row."""
         pack_size = 64
         self.assertRaises(
             ValueError, csv_json_transducer.main, pack_size, ["hehe", "haha", "hoho"],
             "Resources/Test/malformed_rows_multi2.csv")
 
-
     def test_create_extracted_bit_streams(self):
         """Integration test for pext_ms creation, pext application, s2p, p2s operations.
 
-        Create pext_ms.
-        Decompose CSV byte stream, apply pext to each resulting bit stream.
-        Recombine extracted bit streams into extracted byte stream.
+        1. Create pext_ms.
+        2. Decompose CSV byte stream, apply pext to each resulting bit stream.
+        3. Recombine extracted bit streams into extracted byte stream.
 
         Example:
             CSV file: abc,123
@@ -91,7 +80,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         self.assertEqual(extracted_byte_stream, "12abcflap")
 
     def test_create_bp_bs(self):
-        """Input of 123 was resulting in '{\ncol1: ___,\n'."""
+        """Ensure a well-formed boilerplate byte stream is produced."""
         csv_column_names = ["col1"]
         csv_file_as_str = pablo.readfile('Resources/Test/s2p_test.csv')
         pack_size = 64
@@ -126,24 +115,14 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Integration test verifying the second half of the transducer.
 
         Testing from PDEP marker stream to JSON file."""
-        csv_file_as_str = '12,abc,flap'
+        csv_file_as_str = '12,abc,flap\n'
         field_widths = [2, 3, 4]
         csv_column_names = ["col1", "col2", "col3"]
         converter = JSONConverter(field_widths, csv_column_names)
         pext_marker_stream = 1979 #11110111011
         pdep_ms = int('00000000111100000000000000000011100000000000000000011000000000000000000000000', 2)
 
-        json_bp_byte_stream = converter.create_bpb_stream()
-        json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-        pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-        pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
-        for i in range(8):
-            # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
-            extracted_bits_stream = pablo.apply_pext(csv_bit_streams[i], pext_marker_stream)
-            pablo.apply_pdep(json_bp_bit_streams, i, pdep_ms, extracted_bits_stream)
-
-        output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream))
+        output_byte_stream = converter.transduce(csv_file_as_str, pext_marker_stream)
         expected_output_byte_stream = '[\n    {\n        "col1": 12,\n        "col2": abc,\n        "col3": flap\n    }\n]'
         self.assertEqual(output_byte_stream, expected_output_byte_stream)
 

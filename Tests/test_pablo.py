@@ -17,18 +17,23 @@ from src import pablo
 from src import csv_json_transducer
 from src import field_width
 
-# Won't add many tests here. Just need it to work for purposes of prototype. Parabix does things
-# differently for these methods.
 class TestPabloMethods(unittest.TestCase):
-    """Contains unit tests for the functions in pablo.py"""
+    """Contains unit tests for the functions in pablo.py that were added
+    as part of the transducer prototype project."""
 
     def test_create_idx_ms(self):
         """Unit test for create_idx_ms."""
-        idx_ms = pablo.create_idx_ms(int("11011101111", 2), 64)
+        pack_size = 64
+        pext_ms = int("11011101111", 2)
+        idx_ms = pablo.create_idx_ms(pext_ms, pack_size)
         self.assertEqual(idx_ms, 1)
 
     def test_create_pext_ms(self):
-        """Unit test for create_pext_ms."""
+        """Unit test for create_pext_ms.
+
+        Remember that pext_ms is built from right to left, least sig position
+        to most sig position. That means we process the pext_ms from right
+        to left in order to start processing from fields at the start of test.csv."""
         csv_file_as_str = pablo.readfile("Resources/Test/test.csv")
         pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
         self.assertEqual(pext_ms, int("11110111011", 2))
@@ -36,7 +41,9 @@ class TestPabloMethods(unittest.TestCase):
     def test_serial_parallel_and_back(self):
         """
         Input: CSV file containing 123\n
-        Expected output: [0, 0, 7, 7, 8, 0, 14, 5]
+        Expected output: Parallel bit streams obtained by decomposing the
+        CSV file bytes into parallel bit streams:
+        [0, 0, 7, 7, 8, 0, 14, 5]
 
         Explanation:
             123\n = 00110001 ->1
@@ -44,13 +51,10 @@ class TestPabloMethods(unittest.TestCase):
                     00110011 ->3
                     00001010 ->\n
 
-            Parallel bit streams generated from decomposing:
+            Parallel bit streams are generated from decomposing the byte stream above:
             Remember that least sig bit of each byte (i.e. right most bit) goes to
             bit stream 0. Also remember that each of the bit streams grow from right to
             left, so the first byte is represented by the rightmost bit of each PBS.
-
-            When reading a PBS, we read it from least sig to most sig, right to left. Least
-            sig bit represent first byte of file. Most sig bit represents last byte of file.
 
             Bit streams are stored in list in ascending order (i.e. leftmost bit stream is bs 0)
 
@@ -80,19 +84,21 @@ class TestPabloMethods(unittest.TestCase):
         pext_ms = int('11101010111111110', 2)
         bit_stream = int('10101011101100011', 2)
         expected_source_bit_stream = int('1011110110001', 2)
-        actual_ebs = pablo.apply_pext(bit_stream, pext_ms)
-        #print(bin(actual_ebs))
-        #print(bin(expected_source_bit_stream))
-        self.assertEqual(expected_source_bit_stream, actual_ebs)
+        actual_sbs = pablo.apply_pext(bit_stream, pext_ms)
+
+        self.assertEqual(expected_source_bit_stream, actual_sbs)
+
     def test_apply_pext_csv_json(self):
-        """Integration test for s2p, pext, p2s.
+        """Extract fields from CSV, verify result.
+
+        Integration test for s2p, pext, p2s.
 
         csv_input:              abcd,ff,12345
         pext_ms:                1111011011111
         extracted_byte_stream:  abcdff12345
         """
         csv_byte_stream = 'abcd,ff,12345'
-        pext_ms = int('1111101101111', 2) # bit stream, right to left
+        pext_ms = int('1111101101111', 2) # bit stream, built/read right to left
         expected_extracted_byte_stream = 'abcdff12345'
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_byte_stream, csv_bit_streams)

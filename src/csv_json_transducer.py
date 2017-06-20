@@ -54,31 +54,13 @@ def main(pack_size, csv_column_names, path_to_file,
         converter = JSONConverter(field_widths, csv_column_names)
     else:
         raise ValueError("Unsupported target transduction format specified:", target_format)
+
     converter.verify_user_inputs(pack_size, csv_file_as_str)
-
-    pdep_marker_stream = converter.create_pdep_stream()
-    json_bp_byte_stream = converter.create_bpb_stream()
-    json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-    csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-    extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-    # Decompose the input bytestream and output byte stream template into parallel bit streams
-    pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-    pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
-
-    # Transduce
-    for i in range(8):
-        # Extract bits from CSV bit streams and deposit in bp bit streams.
-        extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], fields_pext_ms)
-        pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bit_streams[i])
-
-    # Combine the transduced parallel bit streams into the final output byte stream
-    output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream)) # Unicode str in Python 3.x
-    #extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, sum(field_widths))
+    output_byte_stream = converter.transduce(csv_file_as_str, fields_pext_ms)
     print("input CSV file:", "\n" + csv_file_as_str)
     print("CSV file column names:", csv_column_names)
     print("fields_pext_ms:", bin(fields_pext_ms))
     print("field widths:", field_widths)
-    print("pdep_marker_stream:", bin(pdep_marker_stream))
     print("output_JSON_file:", "\n" + output_byte_stream)
     #pablo.writefile('out.json', output_byte_stream)
     return output_byte_stream

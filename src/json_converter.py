@@ -159,3 +159,41 @@ class JSONConverter(Converter):
             following_boilerplate_bytes += 6  #    \n}
 
         return (preceeding_boilerplate_bytes, following_boilerplate_bytes)
+
+    def transduce(self, file_as_str, fields_pext_ms, return_extracted_bs=False):
+        """Transduce file_as_str to JSON.
+
+        Args:
+            file_as_str (str): The input file. Remember that in Python 3.x a str is a *Unicode*
+                str. It stores a sequence of Unicode codepoints.  Encode to a particular format
+                if you want to get a byte stream in a particular encoding.
+            fields_pext_ms: A marker stream that shows where in file_as_str the fields we want to
+                extract lie. A set bit in field_pext_ms corresponds to a byte we want to extract.
+            return_extracted_bs: A flag that can be enabled for debugging purposes if the user wants
+                to see what fields were extracted from the file.
+
+        Returns:
+            output_byte_stream (str): A string represented output JSON.
+        """
+        pdep_marker_stream = self.create_pdep_stream()
+        json_bp_byte_stream = self.create_bpb_stream()
+        json_bp_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
+        # Decompose the input bytestream and output byte stream template into parallel bit streams
+        pablo.serial_to_parallel(file_as_str, csv_bit_streams)
+        pablo.serial_to_parallel(json_bp_byte_stream, json_bp_bit_streams)
+
+        # Transduce
+        for i in range(8):
+            # Extract bits from CSV bit streams and deposit in bp bit streams.
+            extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], fields_pext_ms)
+            pablo.apply_pdep(json_bp_bit_streams, i, pdep_marker_stream, extracted_bit_streams[i])
+
+        # Combine the transduced parallel bit streams into the final output byte stream
+        output_byte_stream = pablo.inverse_transpose(json_bp_bit_streams, len(json_bp_byte_stream)) # Unicode str in Python 3.x
+        extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams, pablo.get_popcount(fields_pext_ms))
+        if return_extracted_bs:
+            return output_byte_stream, extracted_bit_streams
+        else:
+            return output_byte_stream

@@ -262,40 +262,44 @@ def get_popcount(bits):
         count += 1
     return count
 
+# ---------------Functions below this line have been tested with Python 3.x only!!------------------
+
 def serial_to_parallel(unicode_string, bit_streams):
-    """Encode the unicode string into a utf-8 bytestream, then decompose.
+    """Encode unicode_string as a utf-8 bytestream, then decompose the stream.
+
+    We must encode the unicode string as a UTF-8 byte stream so that we have a concrete sequence of
+    bytes to decompose into PBS. If the string is represented as a sequence of Unicode characters
+    independent of a particular encoding we can't decompose it into parallel bit streams properly.
+    Decomposing into UTF-8 as opposed to ASCII ensures that we can handle non-ascii characters.
+
+    We follow a little-endian bit position numbering scheme. The least significant bit of each byte
+    is bit 0, the  most significant bit is bit 7.
 
     Args:
-    unicode_string (str): Unicode string representing the text we want to decompose into
-    parallel bit streams.
-    bit_streams (list of int): Structure that will contain the eight parallel bit streams that
-    result from the decomposition.
+        unicode_string (str): Unicode string representing the text we want to decompose into
+            parallel bit streams. Unicode is the default str type in Python 3.x, not 2.x.
+        bit_streams (list of int): Structure that will contain the eight parallel bit streams that
+            result from decomposition.
 
-    Follow little-endian bit position numbering scheme. Least significant bit of each byte is bit 0,
-    most significant bit is bit 7. Also note that in Python 3.x, Unicode string is the default string
-    type. That means this function should work out-of-the-box for any string. However, in Python 2.x
-    the default string type is a byte string. Such a string must first be converted to a Unicode string
-    before it can be passed to this function.
     """
     byte_count = 0
-    utf8_byte_string = unicode_string.encode()
+    utf8_byte_string = unicode_string.encode() # Go from Unicode codepoints to UTF-8 byte stream
+    # Decompose each byte in the string
     for byte in utf8_byte_string:
-        #byte = ord(byte) # get integer representing code point of the byte
-        #print(bin(byte))
         for i in range(8):
-            #print("b4 ", bin(bit_streams[i]))
             bit = (byte >> i) & 1
             bit_streams[i] = bit_streams[i] | (bit << byte_count)
-            #print("bit stream", i, bin(bit_streams[i]))
         byte_count += 1
-    #print(bit_streams)
 
 def inverse_transpose(bitset, len):
-    """Construct output bytestream by combining appropriate bits from bitset.
+    """Construct output bytestream by reassembling the PBS into a byte stream.
 
-    Bytestream grows left to right, process bitset from right to left as per
-    bit stream processing convention. This method creates bytes sequentially
-    by combining the appropriate bits from the bits in bitset.
+    Bytestream grows left to right (in reading order), but we process bitsets
+    from right to left as per
+    bit stream processing convention. 
+    
+    This method creates bytes sequentially
+    by combining the bits in bitset.
 
     Args:
         bitset: The set of bit streams to combine into a byte stream.
@@ -307,9 +311,9 @@ def inverse_transpose(bitset, len):
 
     Example:
     Bit streams:
-    101
-    111
-    100
+    bs2: 101
+    bs1: 111
+    bs0: 100
 
     First we process the least sig column to get 110, then we move cursor over by one
     position and create 010, and finally 111.
@@ -323,10 +327,11 @@ def inverse_transpose(bitset, len):
                 # 0th pbs contains least sig bit
                 byteval += 1 << j
         bytestream.append(byteval)
-        cursor += cursor # *2, equiv to << 1
+        cursor += cursor # *2, equiv to << 1. Move to next bit position
     return bytestream.decode('utf-8')
 
-def count_leading_ones(strm):
+def count_forward_ones(strm):
+    """Count the number of consequtive 1s starting from the least sig bit position."""
     ones = 0
     while (strm & 0xFFFFFFFF) == 0xFFFFFFFF:
         ones += 32
@@ -345,16 +350,16 @@ def create_idx_ms(marker_stream, pack_size):
     Quick-and-dirty python implementation of idxMarkerStream Parabix kernel.
     Whereas the Parabix kernel using simd operations to generate the idx
     stream quickly, this function simply does a sequential scan of the input
-    stream to identify packs of interest. Remember bit streams like idx_marker_stream.
-    See https://github.com/AdamBJ/Python-Prototyping/wiki/Bit-stream-growth-and-processing-orde.
+    stream to identify packs of interest. Remember bit streams like idx_marker_stream grow R to L.
+    See https://github.com/AdamBJ/Python-Prototyping/wiki/Bit-stream-growth-and-processing-order.
 
     Args:
         marker_stream (int): The stream to scan through. It's a bit stream, so process it
-            from left to right (starting at pos 0, the least sig position).
+            from right to left (starting at pos 0, the least sig position).
         pack_size (int): The final index stream is marker_stream length / pack_size
-            bits long. Each bit of the index stream represents a pack_size "pack"
-            of input stream bits. If the index stream bit is set, that means the
-            pack contains at least one set bit and requires processing.
+            bits long. Each bit of the index stream represents a pack_sized "pack"
+            of input stream bits. If the index stream bit is set, that means the corresponding
+            pack in marker_stream contains at least one set bit and requires processing.
     Returns:
         idx_marker_stream (int): See pack_size comment.
     """
@@ -362,8 +367,8 @@ def create_idx_ms(marker_stream, pack_size):
     pack_mask = (1 << pack_size) - 1
     shift_amnt = 0
     while marker_stream:
-        non_empty_pack = any(pack_mask & marker_stream)
-        idx_marker_stream = idx_marker_stream | (non_empty_pack << shift_amnt)
+        non_empty_pack = any(pack_mask & marker_stream) # set if pack contains fields
+        idx_marker_stream = idx_marker_stream | (non_empty_pack << shift_amnt) # add bit to idx ms
         shift_amnt += 1
         marker_stream >>= pack_size
 
@@ -377,11 +382,25 @@ def get_width_next_field(bit_stream):
     """
     leading_zeroes = count_forward_zeroes(bit_stream)
     bit_stream >>= leading_zeroes
-    fw = count_leading_ones(bit_stream)
+    fw = count_forward_ones(bit_stream)
     return fw
 
 def create_pext_ms(byte_stream, target_characters, get_inverse=False):
-    """Create a PEXT marker stream based on characters in target_characters."""
+    """Create a PEXT marker stream based on characters in target_characters.
+    
+    Scans through byte_stream, adds single bit to pext_ms for each byte in byte_
+    stream. If a character in byte_stream matches a character in target_characters
+    && get_inverse == False, we add a 1 bit to the pext_ms. Otherwise we add a 0. 
+
+    Example:
+        byte_stream = abc,123\n
+        target_characters = [",", "\n"]
+        get_inverse = False
+
+        pext_marker_stream - 1110111
+
+    Remember to read pext_marker_stream from right to left.
+    """
     pext_marker_stream = 0
     shift_amnt = 0
     for character in byte_stream:
@@ -398,6 +417,7 @@ def create_pext_ms(byte_stream, target_characters, get_inverse=False):
         else:
             num_bytes = len(character.encode())
         shift_amnt += num_bytes
+
     return pext_marker_stream
 
 def apply_pext(bit_stream, pext_marker_stream):
@@ -405,21 +425,19 @@ def apply_pext(bit_stream, pext_marker_stream):
 
     Args:
         bit_stream: The bit stream we'll extract bits from.
-        pext_marker_stream: The marker stream that tells us which bit positions in bit_stream
+        pext_marker_stream: Marker stream that tells us which bit positions in bit_stream
             to extract bits from.
     Returns:
         extracted_bit_stream: The bit stream that results from extracting bits from bit_stream
             at the locations indicated by pext_marker_stream.
     Example:
-        bit_stream:         1010001110
-        pext_marker_stream: 1111110001
+        bit_stream:           1010001110
+        pext_marker_stream:   1111110001
 
-        extracted_bit_stream: 1010000
+        extracted_bit_stream: 101000   0
     """
     extracted_bit_stream = 0
     shift_amnt = 0
-    #print(bin(bit_stream))
-    #print(bin(pext_marker_stream))
     while pext_marker_stream:
         leading_zeroes = count_forward_zeroes(pext_marker_stream)
         fw = get_width_next_field(pext_marker_stream)
@@ -428,8 +446,9 @@ def apply_pext(bit_stream, pext_marker_stream):
         field &= bit_stream
         field >>= leading_zeroes # field now contains extracted bit stream data
 
-        # reset pext_marker_stream bits belonging to the field we just processed
+        # Reset pext_marker_stream bits belonging to the field we just processed
         pext_marker_stream = pext_marker_stream & ~((1 << (leading_zeroes + fw)) - 1)
+        # Insert the bits we extracted into extracted_bit_stream
         extracted_bit_stream = (field << shift_amnt) | extracted_bit_stream
         shift_amnt += fw
     return extracted_bit_stream
@@ -438,22 +457,20 @@ def apply_pdep(bp_bit_streams, bp_stream_idx, pdep_marker_stream, source_bit_str
     """Apply quick-and-dirty Python version of pdep to bp_bit_streams[bp_stream_idx].
 
     Process the stream from least significant bit (right) to most significant bit (left).
-    Right and left don't actually have meaning in terms of how the computer does the
-    processing. This heuristic seems to work though.
 
     Args:
-        bp_bit_streams: Stream set that contains the stream the pext operation will be applied on.
+        bp_bit_streams: Stream set that contains the stream the pdep operation will be applied to.
         bp_stream_idx: Index in bp_bit_streams of the stream we will apply the pdep operation to.
         pdep_marker_stream: Marker stream that tells us the positions within bp_bit_streams[bp_stream_idx]
             that the extracted bits should be deposited.
         source_bit_stream: The stream we will be inserting into bp_bit_streams[bp_stream_idx] at the
-            locations indicated by pdep_marker_streams. Consists of extracted field bits, e.g. for a CSV file
+            locations indicated by pdep_marker_stream. Consists of extracted field bits, e.g. for a CSV file
             source_bit_stream could be obtained by applying s2p on a version of the CSV file with the
             delimiters stripped out (we use a PEXT operation, though). Remeber that source
             bit_stream is a bit stream, not a byte stream. We need to combine 8 source_bit_streams using
             p2s to obtain the fields byte stream.
     Example:
-        source_bit_stream =        101011
+        source_bit_stream =                                    101011
         pdep_marker_stream =           000000001110000000011100000000
         bp_bit_stream[bp_stream_idx] = 000000000000000000000000000000
 
