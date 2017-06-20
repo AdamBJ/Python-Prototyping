@@ -51,6 +51,12 @@ class Converter(ABC):
         must implement this method."""
         pass
         
+    def verify_pack_size(self, pack_size):
+        """Verify inputs provided by user."""
+        if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
+            # Credit to A.Polino for this check
+            raise ValueError("Pack size must be a power of two.")
+
     def create_pdep_stream(self):
         """Generate a bit mask stream for use with the PDEP operation.
 
@@ -99,8 +105,4 @@ class Converter(ABC):
         pdep_marker_stream.value = (field_wrapper.value << shift_amount) \
                                 | pdep_marker_stream.value
 
-    def verify_pack_size(self, pack_size):
-        """Verify inputs provided by user."""
-        if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
-            # Credit to A.Polino for this check
-            raise ValueError("Pack size must be a power of two.")
+    
