@@ -16,7 +16,6 @@ from src.transducer_target_enums import TransductionTarget
 from src import pablo
 from src import csv_json_transducer
 from src import field_width
-from src import pdep_stream_gen
 
 # Won't add many tests here. Just need it to work for purposes of prototype. Parabix does things
 # differently for these methods.
@@ -34,34 +33,40 @@ class TestPabloMethods(unittest.TestCase):
         pext_ms = pablo.create_pext_ms(csv_file_as_str, [",", "\n"], True)
         self.assertEqual(pext_ms, int("11110111011", 2))
 
-    def test_serial_to_parallel_and_back(self):
+    def test_serial_parallel_and_back(self):
         """
         Input: CSV file containing 123\n
-        Expected output: [0, 0, 7, 7, 0, 0, 3, 5]
+        Expected output: [0, 0, 7, 7, 8, 0, 14, 5]
 
         Explanation:
-            123 = 00110001
-                  00110010
-                  00110011
+            123\n = 00110001 ->1
+                    00110010 ->2
+                    00110011 ->3
+                    00001010 ->\n
 
             Parallel bit streams generated from decomposing:
             Remember that least sig bit of each byte (i.e. right most bit) goes to
             bit stream 0. Also remember that each of the bit streams grow from right to
             left, so the first byte is represented by the rightmost bit of each PBS.
-ADD THE NEWLINE DUMMY!
-            first bit from each byte =  7 = 000
-                                        6 = 000
-                                        5 = 111
-                                        4 = 111
-                                        3 = 000
-                                        2 = 000
-                                        1 = 110
-                                        0 = 101
+
+            When reading a PBS, we read it from least sig to most sig, right to left. Least
+            sig bit represent first byte of file. Most sig bit represents last byte of file.
+
+            Bit streams are stored in list in ascending order (i.e. leftmost bit stream is bs 0)
+
+            first bit from each byte =  7 = 0000
+                                        6 = 0000
+                                        5 = 0111
+                                        4 = 0111
+                                        3 = 1000
+                                        2 = 0000
+                                        1 = 1110
+                                        0 = 0101
         """
         csv_file_as_str = pablo.readfile("Resources/Test/s2p_test.csv")
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         pablo.serial_to_parallel(csv_file_as_str, csv_bit_streams)
-        self.assertEqual(csv_bit_streams, [5, 6, 0, 0, 7, 7, 0, 0])
+        self.assertEqual(csv_bit_streams, [5, 14, 0, 8, 7, 7, 0, 0])
 
         reconstituted_bytes = pablo.inverse_transpose(csv_bit_streams, 3)
         self.assertEqual('123', reconstituted_bytes)

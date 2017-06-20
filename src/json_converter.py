@@ -1,17 +1,6 @@
 """
-Contains entry for each target format we support transduction to.
-Knowing the target transduction format allows us to calulate the amount
-of boilerplate bytes that need to be added to each source field to
-transduce it.
-
-For example,
-the amount of JSON boilerplate required to transduce an extracted field to JSON
-depends on it's ordinality within the JSON object that will contain it (e.g. the
-amount of boilerplate required for the first field differs from the amount for
-the second field) as well as the length of the column names in the CSV file
-(which is passed in as input). As long as the ordinality and column name info
-is available at runtime, we can dynamically determine how much padding an
-extracted field requires.
+Contains JSONConverter, a class that contains key methods and data required
+transduce a file to JSON.
 """
 import sys
 import os
@@ -34,9 +23,8 @@ class JSONConverter(Converter):
         self._json_object_field_names = json_object_field_names
         self._num_fields_per_unit = len(json_object_field_names)
         self._field_widths = field_widths
-        #TODO determine num BP bytes, maintain here and use across create_ and transduce_
 
-    # Boilerplate for abstract attribute implementation. Add setters if need to set later.
+    # Boilerplate for abstract attribute implementation. Read-only.
     @property
     def num_fields_per_unit(self):
         return self._num_fields_per_unit
@@ -46,23 +34,26 @@ class JSONConverter(Converter):
         return self._field_widths
 
     def verify_user_inputs(self, pack_size, byte_stream):
+        """Ensure that the user has provided a valid pack size
+        and that the input file they've provided contains valid
+        data."""
         self.verify_pack_size(pack_size)
-        field_end_pms = pablo.create_pext_ms(byte_stream, [",", "\n"])
+        self.verify_byte_stream(byte_stream)
 
+    def verify_byte_stream(self, byte_stream):
+        """Check that each row of the input file is well formed."""
+        field_end_ms = pablo.create_pext_ms(byte_stream, [",", "\n"])
         csv_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
         extracted_bit_streams = [0, 0, 0, 0, 0, 0, 0, 0]
-        # Decompose the input bytestream and output byte stream template into parallel bit streams
         pablo.serial_to_parallel(byte_stream, csv_bit_streams)
         for i in range(8):
-            # Extract bits from CSV bit streams and deposit extracted bits in bp bit streams.
-            extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], field_end_pms)
-        # Combine the transduced parallel bit streams into the final output byte stream
-        extracted_byte_stream = pablo.inverse_transpose(extracted_bit_streams,
-                                                        pablo.get_popcount(field_end_pms))
+            extracted_bit_streams[i] = pablo.apply_pext(csv_bit_streams[i], field_end_ms)
+        extracted_delim_stream = pablo.inverse_transpose(extracted_bit_streams,
+                                                         pablo.get_popcount(field_end_ms))
 
         count = 0
-        for character in extracted_byte_stream:
-            if count == (self._num_fields_per_unit - 1) and character != "\n":
+        for delimiter in extracted_delim_stream:
+            if count == (self._num_fields_per_unit - 1) and delimiter != "\n":
                 raise ValueError("Input CSV file contains row missing a newline terminator.")
             elif count == (self._num_fields_per_unit - 1): # found the newline
                 count = 0
@@ -78,27 +69,18 @@ class JSONConverter(Converter):
 
         The boilerplate byte stream is a stream of boilerplate characters with
         space added for values extracted from the input file (e.g. CSV values).
-        The input file values will be inserted into the stream later by PDEP operations.
-        Currently uses quick-and-dirty concatenation (+=). This may change in the Parabix version.
+        The input file values will be inserted into the stream later, at the empty
+        positions, by PDEP operations. Currently uses quick-and-dirty concatenation (+=).
 
-        field_type tracks where we are in the current source format object we're creating.
+        field_type tracks where we are in the current target format object we're creating.
         For example, for JSON, field_type tracks how many fields we've added to the object.
-        We use this information to determine which boilerplate bytes we should add next.
-
-        Args:
-            self.num_fields_per_unit: The number of fields in a "unit" of output. For example,
-            output units for JSON are JSON objects that contain self.num_fields_per_unit fields.
-            For CSV files, self.num_fields_per_unit is just one, since a CSV unit is whatever's
-            between two delimiters.
-
-        Returns:
-            The boilerplate byte stream (str).
+        We use this information to determine which boilerplate bytes should be added at each
+        step.
 
         Example:
             For a CSV input file with a single value that's three characters wide,
             return [\n    {\n        "columnName": ___\n        }\n].
         """
-        # TODO prompt for column names
         # self.num_fields_per_unit == number CSV values per row in CSV file
         if len(self.field_widths) % self.num_fields_per_unit != 0:
             raise ValueError("Provided source fields cannot be cleanly packaged into JSON objects.")
@@ -134,7 +116,7 @@ class JSONConverter(Converter):
         return json_bp_byte_stream
 
     def transduce_field(self, field_wrapper, field_type, starts_or_ends_file):
-        """ Pad extracted field with appropriate boilerplate.
+        """Pad extracted field with appropriate JSON boilerplate.
 
         The amount of boilerplate padding we need to add depends on how many
         boilerplate bytes were used to create the boilerplate byte stream in create_bpb_stream.
@@ -151,19 +133,7 @@ class JSONConverter(Converter):
             reference", so the changes we make to field_wrapper.value persist after
             this function returns.
         Example:
-            >>>transduce_field(111, 0, ["col1"])
-            10
-            Note: original field transformed from 111 to (00)11100000000000000000000000
-
-            23 preceeding boilerplate bits:
-                6 from  `    {\n`
-                13 from `         "": `
-                4 from  `col1`
-
-            2 following boilerplate bits:
-                2 from   `,\n`
-
-            Together: `    {\n        "col1": ___,\n
+            See test_csv_json_transducer.py
 
         """
         preceeding_boilerplate_bytes, following_boilerplate_bytes = \
@@ -172,10 +142,11 @@ class JSONConverter(Converter):
         return preceeding_boilerplate_bytes + following_boilerplate_bytes
 
     def get_preceeding_following_bpb(self, field_type, starts_or_ends_file):
-        """Get number boilerplate bytes following or preceeding the current field."""
+        """Get number boilerplate bytes following and preceeding the current field."""
         preceeding_boilerplate_bytes = 0
         following_boilerplate_bytes = 0
         #           "<col_name>": 
+        # Encode as UTF-8 byte stream to handle Unicode characters in column names.
         preceeding_boilerplate_bytes = 12 + len(self._json_object_field_names[field_type].encode('utf-8'))
         #,\n  or \n} or \n] TODO quotes around value?
         following_boilerplate_bytes = 2

@@ -35,44 +35,6 @@ def readfile(filename):
     f.close()
     return contents
 
-def transpose_streams(s, b):
-    """ Build parallel bit streams a single stream at a time.
-
-    The for loop builds an entire PBS, the while loop loops while
-    there are still PBS to build.
-    """
-    mask = 128
-    index = 0
-    #global data
-    while index < 8:
-        current = 0
-        cursor = 1
-        for byte in s:
-            if ord(byte) & mask != 0:
-                current += cursor
-            cursor <<= 1
-
-        index+=1
-        mask>>=1
-        if index == 1:
-            b.bit_0 = current
-        elif index == 2:
-            b.bit_1 = current
-        elif index == 3:
-            b.bit_2 = current
-        elif index == 4:
-            b.bit_3 = current
-        elif index == 5:
-            b.bit_4 = current
-        elif index == 6:
-            b.bit_5 = current
-        elif index == 7:
-            b.bit_6 = current
-        elif index == 8:
-            b.bit_7 = current
-    #data  = s
-    return cursor-1  # EOF mask
-
 def match(s,marker):
     pos = count_forward_zeroes(marker)
     i = 0
@@ -434,7 +396,7 @@ def create_pext_ms(byte_stream, target_characters, get_inverse=False):
             char_mask = int(('1' * num_bytes), 2)
             pext_marker_stream = (char_mask << shift_amnt) | pext_marker_stream
         else:
-            num_bytes = 1 # , and \n are 1 byte
+            num_bytes = len(character.encode())
         shift_amnt += num_bytes
     return pext_marker_stream
 

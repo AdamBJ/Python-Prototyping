@@ -12,14 +12,13 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
                                                            os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from src.transducer_target_enums import TransductionTarget
+from src.transducer_target_enums import TransductionTarget, SourceFormats
 from src import pablo
-from src.pdep_stream_gen import create_pdep_stream
 from src import field_width
 from src.json_converter import JSONConverter
 
 def main(pack_size, csv_column_names, path_to_file,
-         target_format=TransductionTarget.JSON, source_format=TransductionTarget.CSV):
+         target_format=TransductionTarget.JSON, source_format=SourceFormats.CSV):
     """Accept path to file in source_format, transduces file to target_format.
 
     Args:
@@ -78,6 +77,6 @@ def main(pack_size, csv_column_names, path_to_file,
     return output_byte_stream
 
 if __name__ == '__main__':
-   #main(64, ["id","first_name","last_name","email","gender","ip_address"], "Resources/Test/test_multiline_big.csv")
+    #main(64, ["id","first_name","last_name","email","gender","ip_address"], "Resources/Test/test_multiline_big.csv")
     #main(64, ["col A"], "Resources/Test/s2p_test.csv")
     main(64, ["onesy", "two", "flap!"], "Resources/Test/test.csv")

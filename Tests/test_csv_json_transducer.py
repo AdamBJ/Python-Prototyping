@@ -30,7 +30,8 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         """Test with pack_size that isn't a power of 2"""
         pack_size = 63
         self.assertRaises(
-            ValueError, csv_json_transducer.main, pack_size, [""], "")
+            ValueError, csv_json_transducer.main, pack_size, [""],
+            "Resources/Test/malformed_rows.csv")
 
     def test_bad_input2(self):
         """Test with malformed single line CSV file.
@@ -151,7 +152,7 @@ class TestCSVJSONTransducerMethods(unittest.TestCase):
         result = csv_json_transducer.main(64, ["col1"], "Resources/Test/unicode_test.csv")
         self.assertEqual(result, '[\n    {\n        "col1": 한\n    }\n]')
 
-    def test_unicode2(self): #ADDED NEWLINE??
+    def test_unicode2(self):
         """Testing with non-ascii characters in large csv file."""
         result = csv_json_transducer.main(64, ["col A", "gul", "chaava", "dabu"], "Resources/Test/unicode_test_large.csv")
         expected_result = pablo.readfile("Resources/Verified_Output/verfied_unicode_test_large.json")

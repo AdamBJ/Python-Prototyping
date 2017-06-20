@@ -104,4 +104,3 @@ class Converter(ABC):
         if pack_size == 0 or (pack_size & (pack_size - 1)) != 0:
             # Credit to A.Polino for this check
             raise ValueError("Pack size must be a power of two.")
-

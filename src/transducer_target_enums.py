@@ -1,4 +1,5 @@
 """
+TransductionTarget: 
 Contains entry for each target format we support transduction to.
 Knowing the target transduction format allows us to calulate the amount
 of boilerplate bytes that need to be added to each source field to
@@ -12,6 +13,9 @@ the second field) as well as the length of the column names in the CSV file
 (which is passed in as input). As long as the ordinality and column name info
 is available at runtime, we can dynamically determine how much padding an
 extracted field requires.
+
+SourceFormats:
+Contains entry for each source format we support.
 """
 
 from enum import Enum
@@ -19,5 +23,7 @@ from enum import Enum
 class TransductionTarget(Enum):
     """Enumerates the target transduction formats we support."""
     JSON = 1
-    CSV = 2
-    
+
+class SourceFormats(Enum):
+    """Enumerates the source formats we support."""
+    CSV = 1
