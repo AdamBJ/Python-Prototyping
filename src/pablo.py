@@ -8,6 +8,7 @@
 #
 # Dan Lin, Robert D. Cameron
 # March 24, 2012
+# Additions and refinements by Adam Bolding-Jones, June 2017
 #
 #----------------------------------------------------------------------------
 # 
