@@ -1,4 +1,4 @@
-"""Contains helper functions that makes running the tests in Test more convienient."""
+"""Contains helper functions that makes running the tests contained in the Tests directory more convienient."""
 import sys
 import os
 PACKAGE_PARENT = '..'
